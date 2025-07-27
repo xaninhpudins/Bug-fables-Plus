@@ -27,11 +27,6 @@ namespace BFPlus.Patches.BattleControlTranspilers.DoActionPatches.SkillPatches
             cursor.GotoNext(i => i.MatchSub(), i => i.MatchStloc(out _));
             cursor.Remove();
             cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(BattleControl_Ext), "GetMultiHitDamage"));
-            
-            //remove the no exception part of tornado toss
-            cursor.GotoNext(i => i.MatchLdcI4(13));
-            cursor.Emit(OpCodes.Ldc_I4, (int)BattleControl.AttackProperty.None);
-            cursor.Remove();
         }
     }
 
@@ -49,11 +44,6 @@ namespace BFPlus.Patches.BattleControlTranspilers.DoActionPatches.SkillPatches
             cursor.GotoNext(i => i.MatchSub(), i => i.MatchStloc(out _));
             cursor.Remove();
             cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(BattleControl_Ext), "GetMultiHitDamage"));
-
-            //remove the no exception part of Hurricane toss
-            cursor.GotoNext(i => i.MatchLdcI4(13));
-            cursor.Emit(OpCodes.Ldc_I4, (int)BattleControl.AttackProperty.None);
-            cursor.Remove();
         }
     }
 }

@@ -25,17 +25,16 @@ namespace BFPlus.Patches.BattleControlTranspilers
             cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(PatchIceRainDamage), "GetIceRainDamage"));
             Utils.RemoveUntilInst(cursor, i => i.MatchLdcI4(2));
             cursor.GotoNext(MoveType.After,i => i.MatchLdcR4(-999f), i=>i.MatchNewobj(out _), i=>i.MatchCallvirt(out _));
-            cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(PatchIceRainDamage), "ResetIceRainCharge"));
+            cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(PatchIceRainDamage), "IncreaseIceRainHit"));
         }
         static int GetIceRainDamage()
         {
             return MainManager.instance.playerdata[MainManager.battle.currentturn].atk - BattleControl_Ext.Instance.iceRainHits;
         }
 
-        static void ResetIceRainCharge()
+        static void IncreaseIceRainHit()
         {
             BattleControl_Ext.Instance.iceRainHits++;
-            MainManager.instance.playerdata[MainManager.battle.currentturn].charge = 0;
         }
 
     }
