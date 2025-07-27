@@ -92,6 +92,7 @@ namespace BFPlus.Extensions
         public DelayedProjExtra currentDelayedProj = null;
         public int mothFlowerHits = 0;
         public bool inStylishTutorial = false;
+        public int iceRainHits = 0;
         const int vengeanceMax = 3;
         public static BattleControl_Ext Instance
         {
@@ -5499,21 +5500,24 @@ namespace BFPlus.Extensions
             Destroy(storm, 5);
         }
 
-        static int GetMultiHitDamage(int hitCount, int index, int baseDamage)
+        static int GetMultiHitDamage(int baseDamage, int index)
         {
-            float damageMultiplier;
-            damageMultiplier = baseDamage < 4 ? 2 : 1.5f;
+            const int baseHitCount = 4;
+            int hitCount = MainManager.BadgeIsEquipped((int)MainManager.BadgeTypes.Beemerang2) ? 5 : 4;
 
-            int maxClamp = 99;
+            if (hitCount > baseHitCount && index >= baseHitCount)
+                index = baseHitCount - 1;
 
-            int totalDamage = (int)Math.Round(baseDamage * damageMultiplier, MidpointRounding.AwayFromZero);
-            int baseHit = totalDamage / hitCount;
-            int remainder = totalDamage % hitCount;
+            Console.WriteLine($"GEt multi called with damage : {baseDamage}, index {index}, hitCount {hitCount}");
+            float damageMultiplier = 2f;
 
+            int totalDamage = (int)Math.Ceiling(baseDamage * damageMultiplier);
+            int remainingDamage = totalDamage - baseDamage;
 
-            if (totalDamage <= 3)
-                maxClamp = 1;
-            return Mathf.Clamp(baseHit + (index < remainder ? 1 : 0), 1, maxClamp);
+            int baseHit = remainingDamage / (baseHitCount - 1);
+            int remainder = remainingDamage % (baseHitCount - 1);
+            int hitDamage = baseHit + ((index - 2) < remainder ? 1 : 0);
+            return Mathf.Clamp(hitDamage, 1, 99);
         }
     }
 }

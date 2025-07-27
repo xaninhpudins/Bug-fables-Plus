@@ -259,6 +259,7 @@ namespace BFPlus.Patches.DoActionPatches
 
     public abstract class PatchBaseBattleControlGameover : PatchBase { }
 
+    public abstract class PatchBaseBattleControlIceRain : PatchBase { }
     public abstract class PatchBaseCardGamePullCard : PatchBase { }
 
     public abstract class PatchBaseCardGameGetInput : PatchBase { }
