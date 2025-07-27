@@ -561,11 +561,13 @@
     <Compile Include="Patches\BattleControlTranspilers\AdvanceMainTurnPatches\PatchAreaDamageDelProj.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceMainTurnPatches\PatchEndOfTurnChecks.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceMainTurnPatches\PatchMaxCharge.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\AdvanceMainTurnPatches\PatchNoActionEven.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchBadDreams.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchCatalystInk.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchCheckCryostatis.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchEatenCondition.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchHeatingUp.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchHeavySleeper.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchPoisonDMG.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchRemoveLastWind.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AIAttackPatches\PatchAntLieutenantCamera.cs" />
@@ -581,11 +583,13 @@
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\EnemyPatches\ThiefPatches.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\EnemyPatches\WaspScoutPatches.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\EnemyPatches\ZommothPatches.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\PatchFixSetLastTurns.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\PatchFrigidCoffinFreeze.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\SkillPatches\LeifSkills.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\SkillPatches\ViSkills.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\YieldUseCharmHP.cs" />
     <Compile Include="Patches\BattleControlTranspilers\EventDialoguePatches\PatchTidalWyrmDeathEvent.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\EventDialoguePatches\PatchVeguDeathEvent.cs" />
     <Compile Include="Patches\BattleControlTranspilers\EventDialoguePatches\PatchWaspKingDeathEvent.cs" />
     <Compile Include="Patches\BattleControlTranspilers\GetChoiceInput\PatchDoubleDip.cs" />
     <Compile Include="Patches\BattleControlTranspilers\GetChoiceInput\PatchHoloSkillCheck.cs" />
@@ -596,6 +600,7 @@
     <Compile Include="Patches\BattleControlTranspilers\PatchBattleControlRelay.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchBattleControlRevivePlayer.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchBattleControlUpdate.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\PatchBattleControlVineAttack.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchClearBombEffect.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchClearStatus.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchCounterAnimation.cs" />
@@ -654,7 +659,11 @@
     <Compile Include="Patches\BattleControlTranspilers\UseItemPatches\PatchMultiUseFix.cs" />
     <Compile Include="Patches\BattleControlTranspilers\UseItemPatches\PatchNewItemAction.cs" />
     <Compile Include="Patches\CardGameTranspilers\PatchBuildWindow.cs" />
+    <Compile Include="Patches\CardGameTranspilers\PatchCreateCard.cs" />
+    <Compile Include="Patches\CardGameTranspilers\PatchGetInput.cs" />
     <Compile Include="Patches\CardGameTranspilers\PatchLoadCardData.cs" />
+    <Compile Include="Patches\CardGameTranspilers\PatchPlayEnemyCards.cs" />
+    <Compile Include="Patches\CardGameTranspilers\PatchPullCard.cs" />
     <Compile Include="Patches\CardGameTranspilers\PatchStartCard.cs" />
     <Compile Include="Patches\EntityControlPatch.cs" />
     <Compile Include="Patches\EntityControlTranspilers\PatchAnimSpecificQuirks.cs" />
@@ -750,6 +759,7 @@
     <Compile Include="Patches\NPCControlTranspilers\PatchChargeAndAttack.cs" />
     <Compile Include="Patches\NPCControlTranspilers\PatchCheckBump.cs" />
     <Compile Include="Patches\NPCControlTranspilers\PatchCheckItem.cs" />
+    <Compile Include="Patches\NPCControlTranspilers\PatchCreateDescWindow.cs" />
     <Compile Include="Patches\NPCControlTranspilers\PatchDoBehavior.cs" />
     <Compile Include="Patches\NPCControlTranspilers\PatchOnTriggerEnter.cs" />
     <Compile Include="Patches\NPCControlTranspilers\PatchRefreshPlayer.cs" />
@@ -783,6 +793,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

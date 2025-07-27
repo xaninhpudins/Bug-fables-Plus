@@ -48,7 +48,7 @@ namespace BFPlus.Extensions.EnemyAI
 
             if (battle.enemydata[actionid].data == null)
 			{
-				battle.enemydata[actionid].data = new int[1];
+				battle.enemydata[actionid].data = new int[2];
 			}
 
 			if (hpPercent <= 0.5f && battle.enemydata[actionid].data[0] == 0)
@@ -63,15 +63,27 @@ namespace BFPlus.Extensions.EnemyAI
 				battle.enemydata[actionid].data[0] = 1;
                 yield return EventControl.halfsec;
             }
-
-            List<Attacks> chances = new List<Attacks>() { Attacks.Claw, Attacks.Claw, Attacks.Iceball, Attacks.Iceball, Attacks.IcyRocks };
+            Dictionary<Attacks, int> attacks = new Dictionary<Attacks, int>()
+            {
+                { Attacks.Claw, 40},
+                { Attacks.Iceball, 40},
+                { Attacks.IcyRocks, 20},
+            };
 
 			if (battle.enemydata.Length == 1)
 			{
-                chances.AddRange(new Attacks[] { Attacks.IcyRocks, Attacks.IcyRocks });
+				attacks[Attacks.IcyRocks] += 10;
             };
 
-            switch (chances[UnityEngine.Random.Range(0, chances.Count)])
+			if (battle.enemydata[actionid].data[1] == 1)
+			{
+				battle.enemydata[actionid].data[1] = 0;
+				attacks.Remove(Attacks.IcyRocks);
+            }
+
+
+            Attacks attack = MainManager_Ext.GetWeightedResult(attacks);
+            switch (attack)
             {
                 case Attacks.Claw:
                     yield return DoClawsAttack(entity, actionid);
@@ -80,6 +92,7 @@ namespace BFPlus.Extensions.EnemyAI
                     yield return DoIceballs(entity, actionid);
                     break;
                 case Attacks.IcyRocks:
+					battle.enemydata[actionid].data[1] = 1;
                     yield return DoIcyRocks(entity, actionid);
                     break;
             }
@@ -178,30 +191,25 @@ namespace BFPlus.Extensions.EnemyAI
 			icePart.transform.localScale = Vector3.one * 7f;
 			icePart.transform.parent = iceball.transform;
 
-			bool isSummon = battle.enemydata.Length == 1 && UnityEngine.Random.Range(0, 2) == 0;
+			bool isSummon = battle.enemydata.Length < 3 && UnityEngine.Random.Range(0, 2) == 0;
 			EntityControl enemy = null;
 			int enemyID = -1;
 			if (isSummon)
             {
 
-                MainManager.AnimIDs[] possibleEnemies = new MainManager.AnimIDs[] { MainManager.AnimIDs.Krawler, MainManager.AnimIDs.Midge, MainManager.AnimIDs.CursedSkull };
+                MainManager.AnimIDs[] possibleEnemies = new MainManager.AnimIDs[] { MainManager.AnimIDs.Cape, MainManager.AnimIDs.Midge };
                 //randomize enemy type
                 int choosenEnemy = (int)possibleEnemies[UnityEngine.Random.Range(0, possibleEnemies.Length)] - 1;
 
 				switch (choosenEnemy + 1)
 				{
-					case (int)MainManager.AnimIDs.Krawler:
-						enemyID = (int)MainManager.Enemies.IceKrawler;
+					case (int)MainManager.AnimIDs.Cape:
+						enemyID = (int)MainManager.Enemies.Cape;
 						break;
 
 					case (int)MainManager.AnimIDs.Midge:
 						enemyID = (int)NewEnemies.Frostfly;
 						break;
-
-					case (int)MainManager.AnimIDs.CursedSkull:
-						enemyID = (int)MainManager.Enemies.IceWarden;
-						break;
-
 				}
                 enemy = EntityControl.CreateNewEntity("enemy" + enemyID, choosenEnemy, new Vector3(0f, 0f));
 				enemy.gameObject.layer = 9;

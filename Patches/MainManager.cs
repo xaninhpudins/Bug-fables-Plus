@@ -475,9 +475,6 @@ namespace BFPlus.Patches
     {
         static void Prefix(MainManager __instance)
         {
-            if (__instance.GetComponent<MainManager_Ext>() == null)
-                __instance.gameObject.AddComponent<MainManager_Ext>();
-
             if (MainManager_Ext.assetBundle == null)
             {
                 MainManager_Ext.assetBundle = AssetBundle.LoadFromMemory(Properties.Resources.vengeance);
@@ -693,6 +690,10 @@ namespace BFPlus.Patches
                     if (MainManager.instance.flags[891])
                         MainManager.instance.flags[890] = false;
 
+                    ///Reset the in need of training taken quest so levi celia can appear in the training grounds
+                    if (MainManager.instance.flags[859])
+                        MainManager.instance.flags[858] = true;
+
                     if (flags.Length < 900)
                     {
                         if (MainManager.instance.flags[627])
@@ -740,6 +741,12 @@ namespace BFPlus.Patches
                         //completed all quests
                         MainManager.instance.flags[671] = false;
 
+                        //if chuck quest is completed, add grumble gravel to badgeshop
+                        if (MainManager.instance.flags[45])
+                        {
+                            MainManager.instance.badgeshops[0].Add((int)Medal.GrumbleGravel);
+                        }
+
                         int[] recordsId = { 1,2,3,4,7,8,9,10,27,28 };
                         
                         foreach(var record in recordsId)
@@ -761,6 +768,16 @@ namespace BFPlus.Patches
                                 BattleControl_Ext.stylishReward = reward;
                             }
                         }
+
+                        if(data.Length > 19)
+                        {
+                            string[] presetData = data[19].Split(new char[] { '@' });
+
+                            for(int i=0;i<presetData.Length;i++)
+                            {
+                                MainManager_Ext.Instance.medalPresets[i] = MainManager_Ext.MedalPreset.GetPresetFromString(presetData[i]);
+                            }
+                        }
                     }
                 }
             }
@@ -780,6 +797,7 @@ namespace BFPlus.Patches
             }
             List<string> temp = data.ToList();
             temp.Add(BattleControl_Ext.stylishBarAmount + "@" + BattleControl_Ext.stylishReward);
+            temp.Add(string.Join("@", MainManager_Ext.Instance.medalPresets.Where(p => p != null).Select(p => p.ToString())));
             __result = String.Join("\n", temp.ToArray());
         }
     }

@@ -7,10 +7,14 @@ using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO.Compression;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using UnityEngine;
+using Mono.Cecil;
 
 namespace BFPlus.Extensions
 {
@@ -155,7 +159,10 @@ namespace BFPlus.Extensions
         LoreBook,
         ItemLeaf,
         Sticky,
-        PointSwap
+        PointSwap,
+        SpycardsTen,
+        SpycardsEleven,
+        SpycardsTwelve
     }
 
     public enum NewSkill
@@ -307,7 +314,8 @@ namespace BFPlus.Extensions
     {
         GourmetItem=37,
         MedalCategories,
-        BadgeShops
+        BadgeShops,
+        MedalPreset
     }
 
     public enum NewDiscoveries
@@ -427,7 +435,6 @@ namespace BFPlus.Extensions
         public static Medal[] medalDupes = new Medal[] { Medal.Powerbank, Medal.HPDown, Medal.MPPlus, Medal.MPPlus, Medal.MPPlus,
             Medal.InkBubble, Medal.Smearcharge };
         public static string[] enemyData;
-        public static bool adrenalineChecked = true;
         public static bool fastText = false;
         public static bool showResistance = false;
         public static bool newBattleThemes = false;
@@ -443,13 +450,16 @@ namespace BFPlus.Extensions
         public int minibossAmount = -1;
         public int bossAmount = -1;
         public const int SUPERBOSS_AMOUNT = 12;
-        public const int HDWGH_CONDITIONS = 20;
+        public const int HDWGH_CONDITIONS = 10; //20 was max, nerfed cause not fun
         public int newBossMap = -1;
         List<Sprite> oldGui;
         public static AreaData backgroundData;
         static MainManager_Ext instance;
         public SavedRenderSettings savedRenderSettings;
         public static int oldOutline = -1;
+        public const int MYSTERY_SHADE_PRICE = 3;
+        public MedalPreset[] medalPresets = new MedalPreset[10];
+
         public static MainManager_Ext Instance
         {
             get
@@ -696,18 +706,15 @@ namespace BFPlus.Extensions
         public static void SetMenuText()
         {
             List<string> tempList = new List<string>(MainManager.menutext);
-            tempList.Add("Text Skip");
-            tempList.Add($"Trust Fall |single||size,0.55,0.6||icon,{(int)NewGui.TrustFall}|");
-            tempList.Add("Reduces the teams TP to 0.|line|Next turn, the strongest ally attack will recover as much TP as the damage it deals.");
-            tempList.Add("Show Resistance");
-            tempList.Add("New Battle Themes");
+            var temp = assetBundle.LoadAsset<TextAsset>("MenuText").ToString().Split(new char[] { '\n' });
+            tempList.AddRange(temp);
             MainManager.menutext = tempList.ToArray();
 
-            List<int> temp = new List<int>(MainManager.settingsindex);
-            temp.Add((int)NewMenuText.TextSkip);
-            temp.Add((int)NewMenuText.ShowResistance);
-            temp.Add((int)NewMenuText.NewBattleThemes);
-            MainManager.settingsindex = temp.ToArray();
+            List<int> tempSetting = new List<int>(MainManager.settingsindex);
+            tempSetting.Add((int)NewMenuText.TextSkip);
+            tempSetting.Add((int)NewMenuText.ShowResistance);
+            tempSetting.Add((int)NewMenuText.NewBattleThemes);
+            MainManager.settingsindex = tempSetting.ToArray();
         }
 
         public static int FixHoloSkillID(int type)
@@ -943,7 +950,7 @@ namespace BFPlus.Extensions
             {
                 case 0:
                     //i apologize to the bf community for this irational sin of hardcoding this string
-                    oldClues[39] = "Ah yes!, In the Sacred Hills, in a bush!";
+                    oldClues[39] = "|color,3|Ah yes!, In the Sacred Hills, in a bush!";
 
                     newClues = assetBundle.LoadAsset<TextAsset>("FortuneTeller0").ToString().Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
                     break;
@@ -2015,6 +2022,16 @@ namespace BFPlus.Extensions
                 MainManager.listvar = MainManager.instance.badgeshops[badgeId].ToArray();
                 return true;
             }
+
+            if (type == (int)NewListType.MedalPreset)
+            {
+                if(PauseMenu_Ext.Instance.presetId == -1)
+                    MainManager.listvar = MainManager.GradualFill(10);
+                else
+                    MainManager.listvar = MainManager.GradualFill(8);
+
+                return true;
+            }
             return false;
         }
 
@@ -2061,7 +2078,92 @@ namespace BFPlus.Extensions
                 return text;
             }
 
+            if (type == (int)NewListType.MedalPreset)
+            {
+                return Instance.GetMedalPresetListText(type, index, listBar, ref barYOffset, ref textSizeX, ref textSizeY);
+            }
+
             return "";
+        }
+
+        string GetMedalPresetListText(int type, int index, SpriteRenderer listBar, ref float barYOffset, ref float textSizeX, ref float textSizeY)
+        {
+            textSizeX = 0.35f;
+            textSizeY = -0.3f;
+            barYOffset -= 0.2f;
+            if (PauseMenu_Ext.Instance.presetId == -1)
+            {
+                string presetName;
+                if (Instance.medalPresets[MainManager.listvar[index]] == null)
+                {
+                    presetName = "Empty Preset";
+                }
+                else
+                {
+                    var preset = Instance.medalPresets[MainManager.listvar[index]];
+                    presetName = preset.name;
+
+                    for(int i = 0; i < 3; i++)
+                    {
+                        MainManager.NewUIObject("icon" + i, listBar.transform, new Vector2(4.8f + i*0.8f, 0f), Vector3.one * 0.45f, PauseMenu_Ext.Instance.categoryIcons[preset.icons[i]]);
+                    }
+                    MainManager.instance.StartCoroutine(MainManager.SetText("|font,0|" + preset.mpNeeded.ToString().PadLeft(3), 0, null, false, false, new Vector3(7.2f, -0.2f), Vector3.zero, Vector3.one, listBar.transform, null));
+                    MainManager.NewUIObject("mpIcon", listBar.transform, new Vector2(8.8f, -0.45f), Vector3.one * 0.45f, MainManager.guisprites[109]);
+                }
+
+                return "|size,1,1||font,0||single|" + presetName;
+            }
+            else
+            {
+                List<string> listText = new List<string>();
+
+                int count = 1;
+                for(int i = 0; i < 8; i++)
+                {
+                    int baseIndex = i < 5 ? 294 : 304;
+                    listText.Add(MainManager.menutext[i < 5 ? baseIndex + i : baseIndex]);
+
+                    if (i >= 5)
+                    {
+                        listText[i]= listText[i] +" " +count;
+                        count++;
+                    }
+                }
+
+                string colorText = "";
+
+                if (Instance.medalPresets[PauseMenu_Ext.Instance.presetId] == null && (MainManager.listvar[index] == 0 || MainManager.listvar[index] == 2 || MainManager.listvar[index] == 3 || MainManager.listvar[index]>=5))
+                {
+                    colorText = "|color,1|";
+                }
+
+                if (MainManager.listvar[index] > 4)
+                {
+                    int spriteId = 0;
+
+                    if(Instance.medalPresets[PauseMenu_Ext.Instance.presetId] != null)
+                    {
+                        spriteId = Instance.medalPresets[PauseMenu_Ext.Instance.presetId].icons[index - 5];
+                    }
+
+                    SpriteRenderer icon = new GameObject("itemsprite").AddComponent<SpriteRenderer>();
+                    icon.sprite = PauseMenu_Ext.Instance.categoryIcons[spriteId];
+                    icon.transform.parent = listBar.transform;
+                    icon.gameObject.layer = 5;
+                    icon.transform.localScale = Vector3.one * 0.45f;
+                    icon.transform.localPosition = new Vector2(7f, 0f);
+                    PauseMenu_Ext.Instance.presetIcons[index - 5] = icon;
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        Transform sideIcon = MainManager.NewUIObject("side",listBar.transform, new Vector3(i ==0 ? 5.5f : 8.5f, 0f), Vector3.one, MainManager.guisprites[1]).transform;
+                        sideIcon.localEulerAngles = new Vector3(0f, 0f, i == 0 ? -90f:90f);
+                    }
+
+                }
+
+                return "|size,1,1||font,0||single|" + colorText + listText[index];
+            }
         }
 
         static string GetNewListDesc(int type)
@@ -2428,6 +2530,96 @@ namespace BFPlus.Extensions
  
             }
             MainManager.UpdateJounal(MainManager.Library.Logbook, (int)NewAchievement.SuperBug);
+        }
+
+        public class MedalPreset
+        {
+            public List<int[]> medals = new List<int[]>();
+            public int[] icons = new int[3];
+            public string name = "Empty";
+            public int mpNeeded;
+
+            public override string ToString()
+            {
+                string medalsString = string.Join("|", medals.Select(arr => string.Join(",", arr)));
+                return $"{name}[{medalsString}[{string.Join(",", icons)}[{mpNeeded}";
+            }
+
+            public static MedalPreset GetPresetFromString(string presetString)
+            {
+                try
+                {
+                    string[] parts = presetString.Split('[');
+                    if (parts.Length < 4)
+                    {
+                        Console.WriteLine("Invalid preset format");
+                        return null;
+                    }
+
+                    MedalPreset preset = new MedalPreset();
+                    preset.name = parts[0];
+
+                    string[] medals = parts[1].Split('|');
+                    foreach (var medal in medals)
+                    {
+                        if (string.IsNullOrWhiteSpace(medal)) 
+                            continue;
+                        int[] nums = medal.Split(',').Select(s => int.Parse(s)).ToArray();
+                        preset.medals.Add(nums);
+                    }
+
+                    string[] icons = parts[2].Split(',');
+                    for(int i = 0; i < preset.icons.Length; i++)
+                    {
+                        preset.icons[i] = int.Parse(icons[i]);
+                    }
+
+                    preset.mpNeeded = int.Parse(parts[3]);
+
+                    return preset;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("Failed to parse preset string: " + presetString + "\n" + e);
+                    return null;
+                }
+            }
+        }
+
+        public class Compressor
+        {
+            public static string CompressAndEncode(string input)
+            {
+                var bytes = Encoding.UTF8.GetBytes(input);
+                using (var output = new MemoryStream())
+                {
+                    using (var gzip = new GZipStream(output, System.IO.Compression.CompressionLevel.Optimal))
+                    {
+                        gzip.Write(bytes, 0, bytes.Length);
+                    }
+                    return Convert.ToBase64String(output.ToArray());
+                }
+            }
+
+            public static string DecodeAndDecompress(string base64)
+            {
+                try
+                {
+                    byte[] bytes = Convert.FromBase64String(base64);
+                    using (var input = new MemoryStream(bytes))
+                    using (var gzip = new GZipStream(input, CompressionMode.Decompress))
+                    using (var output = new MemoryStream())
+                    {
+                        gzip.CopyTo(output);
+                        return Encoding.UTF8.GetString(output.ToArray());
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[Decompress] Invalid Base64 or GZip input: {e.Message}");
+                    return null;
+                }
+            }
         }
     }
 

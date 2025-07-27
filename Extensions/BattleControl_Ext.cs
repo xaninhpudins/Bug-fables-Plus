@@ -57,11 +57,10 @@ namespace BFPlus.Extensions
         public int revengarangDMG = 0;
         public bool perfectKill = false;
         public int perfectKillAmount = 0;
-        static int perfectKillTotal = 0;
         public int loomLegProgress = 0;
         int oldAnimID = -1;
         public int startState = -1;
-        int rockyRampUpDmg = 0;
+        public int rockyRampUpDmg = 0;
         bool usedPebbleToss = false;
         public bool twinedFateUsed = false;
         public bool spuderStickyBubble = false;
@@ -94,6 +93,7 @@ namespace BFPlus.Extensions
         public int mothFlowerHits = 0;
         public bool inStylishTutorial = false;
         public int iceRainHits = 0;
+        const int vengeanceMax = 3;
         public static BattleControl_Ext Instance
         {
             get
@@ -123,7 +123,7 @@ namespace BFPlus.Extensions
             {
                 for (int i = 0; i < MainManager.instance.playerdata.Length; i++)
                 {
-                    if (CheckVengeance(i) && MainManager.instance.playerdata[i].charge < MainManager_Ext.CheckMaxCharge(i))
+                    if (CheckVengeance(i) && MainManager.instance.playerdata[i].charge < vengeanceMax)
                     {
                         InVengeance = true;
                         StartCoroutine(DoVengeance(i));
@@ -136,7 +136,6 @@ namespace BFPlus.Extensions
         }
         public void ResetStuff()
         {
-            perfectKillTotal = 0;
             BattleControl_Ext.enemyUsedItem = false;
             for (int i = 0; i < MainManager.instance.playerdata.Length; i++)
             {
@@ -214,7 +213,7 @@ namespace BFPlus.Extensions
                     {
                         var enemy = targets[i];
                         CreateBeam(enemy.battleentity.sprite.transform.position, middlePoint, enemy.battleentity.transform);
-                        battle.DoDamage(null, ref __instance.enemydata[targets[i].battleentity.battleid], damageAmount, BattleControl.AttackProperty.Pierce, new DamageOverride[] { DamageOverride.NoFall }, false);
+                        battle.DoDamage(null, ref __instance.enemydata[targets[i].battleentity.battleid], damageAmount, null, new DamageOverride[] { DamageOverride.NoFall }, false);
                     }
                 }
                 yield return EventControl.halfsec;
@@ -346,7 +345,7 @@ namespace BFPlus.Extensions
 
         IEnumerator DoVengeance(int index)
         {
-            MainManager.instance.playerdata[index].charge = MainManager_Ext.CheckMaxCharge(index);
+            MainManager.instance.playerdata[index].charge = vengeanceMax;
             battle.StartCoroutine(battle.StatEffect(MainManager.instance.playerdata[index].battleentity, 4));
             yield return EventControl.halfsec;
             MainManager.PlaySound("Wam");
@@ -416,16 +415,9 @@ namespace BFPlus.Extensions
         public void CheckFlavorCharger(MainManager.ItemUsage type, int? characterid)
         {
             MainManager.ItemUsage[] usages = new MainManager.ItemUsage[]{
-                MainManager.ItemUsage.GradualHP, MainManager.ItemUsage.GradualTP, MainManager.ItemUsage.HPorDamage,
+                MainManager.ItemUsage.HPorDamage,
                 MainManager.ItemUsage.HPRecover, MainManager.ItemUsage.Revive, MainManager.ItemUsage.HPRecoverFull,
                 MainManager.ItemUsage.HPto1,MainManager.ItemUsage.TPRecover,MainManager.ItemUsage.TPRecoverFull,
-                MainManager.ItemUsage.ChargeUp,MainManager.ItemUsage.TPto1, (MainManager.ItemUsage)NewItemUse.AddInk,
-                (MainManager.ItemUsage)NewItemUse.AddSticky,(MainManager.ItemUsage)NewItemUse.RandomBuff,
-                (MainManager.ItemUsage)NewItemUse.RandomDebuff, (MainManager.ItemUsage)NewItemUse.AddSturdy,
-                (MainManager.ItemUsage)NewItemUse.AddAtkDown, (MainManager.ItemUsage)NewItemUse.AddDefDown,
-                (MainManager.ItemUsage)NewItemUse.AddTaunt, (MainManager.ItemUsage)NewItemUse.AddFire,
-                MainManager.ItemUsage.AddPoison, MainManager.ItemUsage.AddFreeze, MainManager.ItemUsage.AddSleep,
-                MainManager.ItemUsage.AddNumb, MainManager.ItemUsage.TurnNextTurn,
             };
 
             if (usages.Contains(type) && MainManager.BadgeIsEquipped((int)Medal.FlavorCharger, characterid.Value))
@@ -436,9 +428,8 @@ namespace BFPlus.Extensions
             {
                 usages = new MainManager.ItemUsage[]
                 {
-                    MainManager.ItemUsage.GradualHPParty, MainManager.ItemUsage.HPRecoverAll, MainManager.ItemUsage.HPto1All,
-                    MainManager.ItemUsage.ReviveAll, (MainManager.ItemUsage)NewItemUse.AddInkParty, (MainManager.ItemUsage)NewItemUse.AddStickyParty,
-                    (MainManager.ItemUsage)NewItemUse.RandomBuffParty,(MainManager.ItemUsage)NewItemUse.RandomDebuffParty
+                    MainManager.ItemUsage.HPRecoverAll, MainManager.ItemUsage.HPto1All,
+                    MainManager.ItemUsage.ReviveAll
                 };
 
                 if (usages.Contains(type))
@@ -477,7 +468,7 @@ namespace BFPlus.Extensions
         static int CheckPerkfectItemDrop(int baseChance, EntityControl entity)
         {
             //int baseChance = !MainManager.BadgeIsEquipped(18) ? !MainManager.BadgeIsEquipped(11) && !MainManager.instance.flags[614] ? -3 : -1 : -7;
-            int itemChance = Mathf.Clamp(MainManager.BadgeIsEquipped((int)Medal.Perkfectionist) ? baseChance + perfectKillTotal : baseChance, baseChance, 0);
+            int itemChance = Mathf.Clamp(baseChance, baseChance, 0);
 
             int[] seedlings = new int[]
             {
@@ -513,15 +504,13 @@ namespace BFPlus.Extensions
 
             foreach (var item in items)
             {
-                if (UnityEngine.Random.Range(0, 100) < 50 + 10 * perfectKillTotal)
+                if (UnityEngine.Random.Range(0, 100) < 50)
                 {
                     int itemID = items[UnityEngine.Random.Range(0, items.Count)];
                     MainManager_Ext.CreateItemEntity(itemID, entity, entity.spritetransform.position, 0);
                     break;
                 }
             }
-            perfectKillTotal = 0;
-
             return UnityEngine.Random.Range(itemChance, entity.npcdata.vectordata.Length);
         }
 
@@ -627,7 +616,12 @@ namespace BFPlus.Extensions
             var randomTarget = targets[UnityEngine.Random.Range(0, targets.Count)];
             MainManager.PlaySound("Flame");
             MainManager.PlayParticle("Fire", randomTarget.battleentity.transform.position + new Vector3(0, randomTarget.battleentity.height), 1f);
-            MainManager.SetCondition(MainManager.BattleCondition.Fire, ref randomTarget, 3);
+            int[] limit = { (int)MainManager.Enemies.KeyL, (int)MainManager.Enemies.KeyR, (int)MainManager.Enemies.Tablet };
+            
+            if(!limit.Any(l=>l == randomTarget.animid))
+            {
+                MainManager.SetCondition(MainManager.BattleCondition.Fire, ref randomTarget, 3);
+            }
             yield return EventControl.halfsec;
         }
 
@@ -697,7 +691,6 @@ namespace BFPlus.Extensions
                 MainManager.instance.tp = Mathf.Clamp(MainManager.instance.tp + tpRegen, 0, MainManager.instance.maxtp);
                 battle.ShowDamageCounter(2, tpRegen, battle.partymiddle + Vector3.up, battle.partymiddle + Vector3.up * 2);
                 yield return EventControl.quartersec;
-                perfectKillTotal += Instance.perfectKillAmount;
             }
             Instance.perfectKillAmount = 0;
             Instance.perfectKill = false;
@@ -839,7 +832,6 @@ namespace BFPlus.Extensions
                 yield return Instance.DoDelProjPlayer();
 
                 battle.UpdateText();
-                MainManager_Ext.adrenalineChecked = false;
                 Instance.usedPebbleToss = false;
                 Instance.twinedFateUsed = false;
                 DarkTeamSnakemouth.RefreshRelay();
@@ -875,6 +867,9 @@ namespace BFPlus.Extensions
                 {
                     var entityExt = Entity_Ext.GetEntity_Ext(MainManager.instance.playerdata[i].battleentity);
                     entityExt.inkWellActive = false;
+                    entityExt.adrenalineUsed = false;
+                    entityExt.inkblotActive = false;
+
                     BattleControl_Ext.Instance.CheckHDWGHConditionAmount(MainManager.instance.playerdata[i], entityExt);
                     if (entityExt.smearchargeActive)
                     {
@@ -893,6 +888,12 @@ namespace BFPlus.Extensions
                 for (int i = 0; i < battle.enemydata.Length; i++)
                 {
                     battle.enemydata[i].cantmove = moves[i];
+
+                    if(battle.enemydata[i].battleentity != null)
+                    {
+                        var entityExt = Entity_Ext.GetEntity_Ext(battle.enemydata[i].battleentity);
+                        entityExt.inkblotActive = false;
+                    }
                 }
 
                 Instance.inEndOfTurnDamage = false;
@@ -921,7 +922,7 @@ namespace BFPlus.Extensions
                 var data = battle.reservedata[i];
                 data.turnssincedeath++;
                 battle.reservedata[i] = data;
-                if (battle.reservedata[i].animid == (int)NewEnemies.FirePopper && battle.reservedata[i].turnssincedeath >= 2)
+                if (battle.reservedata[i].animid == (int)NewEnemies.FirePopper && battle.reservedata[i].turnssincedeath >= 1)
                 {
                     EntityControl firePopper = battle.reservedata[i].battleentity;
                     MainManager.PlaySound("Charge7", 0.9f, 1);
@@ -930,7 +931,7 @@ namespace BFPlus.Extensions
                     firePopper.overrideanim = true;
                     firePopper.animstate = 110;
                     MainManager.PlaySound("Boing1", 1f, 1);
-                    battle.ReviveEnemy(i, 0.5f, false, true);
+                    battle.ReviveEnemy(i, 0.75f, false, true);
                     revived = true;
                     yield return EventControl.halfsec;
                     break;
@@ -1329,7 +1330,16 @@ namespace BFPlus.Extensions
             target.isnumb = false;
         }
 
+        void ReviveAllEnemies(int value)
+        {
+            if(battle.reservedata.Count > 0)
+            {
+                ReviveEnemy(0, value);
 
+                if (battle.reservedata.Count > 0)
+                    ReviveEnemy(0, value);
+            }
+        }
 
         public IEnumerator DoItemEffect(MainManager.ItemUsage type, int value, int? enemyID, int reviveID, MainManager.Items item)
         {
@@ -1378,11 +1388,7 @@ namespace BFPlus.Extensions
                     {
                         battle.Heal(ref battle.enemydata[i], value, false);
                     }
-
-                    for (int i = 0; i < battle.reservedata.Count; i++)
-                    {
-                        ReviveEnemy(i, value);
-                    }
+                    ReviveAllEnemies(value);
                     wait = true;
                     break;
 
@@ -2036,7 +2042,7 @@ namespace BFPlus.Extensions
                 }
                 else
                 {
-                    int target = battle.target;
+                    int target = MainManager.battle.avaliabletargets[battle.target].battleentity.battleid;
                     var targetEntity = battle.enemydata[target].battleentity;
                     endPos = targetEntity.transform.position + battle.enemydata[target].cursoroffset + new Vector3(0f, targetEntity.height - 1f);
                 }
@@ -2591,13 +2597,6 @@ namespace BFPlus.Extensions
 
             entity.Emoticon(MainManager.Emoticons.None);
             yield return WaitStylish(0f);
-
-            if (actionID == (int)NewSkill.Vitiation)
-            {
-                MainManager.BattleData[] playerdata2 = MainManager.instance.playerdata;
-                int num14 = battle.currentturn;
-                playerdata2[num14].cantmove = playerdata2[num14].cantmove + 1;
-            }
             yield break;
         }
 
@@ -2987,7 +2986,8 @@ namespace BFPlus.Extensions
         {
             battle.nonphyscal = true;
             battle.dontusecharge = true;
-            int target = battle.target;
+            MainManager.BattleData targetData = MainManager.battle.avaliabletargets[battle.target];
+            int target = targetData.battleentity.battleid;
 
             int selectedItem = battle.selecteditem;
             if (selectedItem == (int)NewItem.WebWad)
@@ -3676,8 +3676,11 @@ namespace BFPlus.Extensions
 
         static bool CheckRecharge(int playerID)
         {
-            if (MainManager.BadgeIsEquipped((int)Medal.Adrenaline, MainManager.instance.playerdata[playerID].trueid) && MainManager.instance.playerdata[playerID].hp <= 4)
+            var entityExt = Entity_Ext.GetEntity_Ext(MainManager.instance.playerdata[playerID].battleentity);
+            if (MainManager.BadgeIsEquipped((int)Medal.Adrenaline, MainManager.instance.playerdata[playerID].trueid) && MainManager.instance.playerdata[playerID].hp <= 4 && !entityExt.adrenalineUsed)
             {
+                entityExt.adrenalineUsed = true;
+                MainManager.battle.StartCoroutine(battle.ItemSpinAnim(entityExt.entity.transform.position + Vector3.up, MainManager.itemsprites[1, (int)Medal.Adrenaline], true));
                 return false;
             }
 
@@ -4265,6 +4268,8 @@ namespace BFPlus.Extensions
 
             if (MainManager.battle.enemydata.Any(e => e.animid == (int)NewEnemies.LeafbugShaman) && MainManager.battle.enemydata.Length == 3)
             {
+                MainManager.battle.enemydata[1].basedef = MainManager.battle.enemydata[1].def;
+
                 MainManager.battle.enemydata[0].battlepos = new Vector3(0.9f, 0f, 0f);
                 MainManager.battle.enemydata[1].battlepos = new Vector3(4f, 0f, 0.15f);
                 MainManager.battle.enemydata[2].battlepos = new Vector3(6.8f, 0f, 0.3f);

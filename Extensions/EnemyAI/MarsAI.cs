@@ -25,7 +25,6 @@ namespace BFPlus.Extensions.EnemyAI
         int VINE_BARRAGE_DAMAGE = 8;
         int SIMPLE_VINE_DAMAGE = 10;
         int HUGE_SEED_DAMAGE = 9;
-        int FLOWERETTI_HEAL = 5;
         public override IEnumerator DoBattleAI(EntityControl entity, int actionid)
         {
             battle = MainManager.battle;
@@ -36,26 +35,36 @@ namespace BFPlus.Extensions.EnemyAI
                 battle.enemydata[actionid].data = new int[3];
             }
 
-            List<Attacks> chances = new List<Attacks>() {Attacks.HugeSeed, Attacks.VineAttack, Attacks.VineAttack };
+            Dictionary<Attacks, int> attacks = new Dictionary<Attacks, int>()
+            {
+                { Attacks.HugeSeed, 50},
+                { Attacks.VineAttack, 50},
+            };
+
 
             if (hpPercentMars <= 0.6f)
-                chances.Add(Attacks.VineBarrage);
+            {
+                attacks.Add(Attacks.VineBarrage, 30);
+            }
             
             if (battle.enemydata.Length < 3 && battle.enemydata[actionid].data[0] <= 0)
             {
-                chances.AddRange(new Attacks[] { Attacks.SummonBud, Attacks.SummonBud });
-                if(battle.enemydata.Length == 1)
-                {
-                    chances = new List<Attacks>() { Attacks.SummonBud };
-                }
+                attacks.Add(Attacks.SummonBud, 40);
             }
 
-            if(battle.enemydata[actionid].data[0] > 0)
+            Attacks attack = MainManager_Ext.GetWeightedResult(attacks);
+
+            if (battle.enemydata[actionid].data[0] <= 0 && battle.enemydata.Length == 1)
+            {
+                attack = Attacks.SummonBud;
+            }
+
+            if (battle.enemydata[actionid].data[0] > 0)
             {
                 battle.enemydata[actionid].data[0]--;
             }
-            
-            switch (chances[UnityEngine.Random.Range(0, chances.Count)])
+
+            switch (attack)
             {
                 case Attacks.VineBarrage:
                     yield return DoVineBarrage(entity, actionid);
@@ -89,7 +98,7 @@ namespace BFPlus.Extensions.EnemyAI
                     if (UnityEngine.Random.Range(0,100) < 40 + battle.enemydata[actionid].data[2])
                     {
                         BattleControl.SetDefaultCamera();
-                        yield return DoFlowerettiAttack(entity, actionid);
+                        yield return DoFlowerettiAttack(entity, actionid, hpPercentMars);
                         battle.enemydata[actionid].data[2] = 0;
                         battle.enemydata[actionid].data[1] = 3;
                         yield break;
@@ -308,7 +317,7 @@ namespace BFPlus.Extensions.EnemyAI
         }
 
        
-        IEnumerator DoFlowerettiAttack(EntityControl entity, int actionid)
+        IEnumerator DoFlowerettiAttack(EntityControl entity, int actionid, float hpPercentMars)
         {
             entity.animstate = 101; //covers in bud
 
@@ -367,7 +376,23 @@ namespace BFPlus.Extensions.EnemyAI
                 MainManager.SetCondition(MainManager.BattleCondition.DefenseUp, ref battle.enemydata[i], 3);
                 battle.StartCoroutine(battle.StatEffect(battle.enemydata[i].battleentity, 1));
                 battle.StartCoroutine(battle.StatEffect(battle.enemydata[i].battleentity, 0));
-                battle.Heal(ref battle.enemydata[i], FLOWERETTI_HEAL, true);
+
+                if(hpPercentMars <= 0.5f && i != actionid)
+                {
+                    MainManager.PlaySound("Heal3");
+                    if (i != actionid)
+                    {
+                        battle.StartCoroutine(battle.StatEffect(battle.enemydata[i].battleentity, 5));
+                        battle.enemydata[i].moreturnnextturn++;
+                    }
+                    else
+                    {
+                        battle.ClearStatus(ref battle.enemydata[actionid]);
+                        MainManager.SetCondition(MainManager.BattleCondition.Sturdy, ref battle.enemydata[actionid], 2);
+                        MainManager.PlayParticle("MagicUp", entity.transform.position);
+                        battle.enemydata[actionid].delayedcondition = null;
+                    }
+                }
             }
 
             MainManager.PlaySound("StatDown");

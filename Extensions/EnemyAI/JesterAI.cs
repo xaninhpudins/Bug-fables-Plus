@@ -72,7 +72,7 @@ namespace BFPlus.Extensions.EnemyAI
         public override IEnumerator DoBattleAI(EntityControl entity, int actionid)
         {
             battle = MainManager.battle;
-            battle.SetData(actionid, 12);
+            battle.SetData(actionid, 13);
             float hpPercent = battle.HPPercent(battle.enemydata[actionid]);
 
             if(battle.enemydata[actionid].data[0] != 1)
@@ -173,6 +173,13 @@ namespace BFPlus.Extensions.EnemyAI
                 battle.enemydata[actionid].data[2] = 0;
             }
 
+            //Prevents Cherry bomb from being spammed
+            if (battle.enemydata[actionid].data[12] == 1)
+            {
+                attacks.Remove(Attacks.CherryBomb);
+                battle.enemydata[actionid].data[12] = 0;
+            }
+
             Attacks attack = MainManager_Ext.GetWeightedResult(attacks);
 
             if(attack != Attacks.BugCatcher && battle.enemydata[actionid].ate == null)
@@ -193,6 +200,7 @@ namespace BFPlus.Extensions.EnemyAI
                     yield return DoFireballJuggling(entity, actionid);
                     break;
                 case Attacks.CherryBomb:
+                    battle.enemydata[actionid].data[12] = 1;
                     yield return DoCherryBomb(entity,actionid);
                     break;
                 case Attacks.ChargeBox:
@@ -822,6 +830,7 @@ namespace BFPlus.Extensions.EnemyAI
                     playerEntity.LockRigid(false);
                     playerEntity.transform.position = playerPos;
                     playerEntity.animstate = (int)MainManager.Animations.KO;
+                    playerEntity.rotater.eulerAngles = Vector3.zero;
                     //BattleControl.SetDefaultCamera();
 
                     yield return EventControl.halfsec;

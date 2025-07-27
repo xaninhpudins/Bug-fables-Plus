@@ -6,6 +6,7 @@ using System;
 using System.Reflection;
 using System.Linq;
 using BFPlus.Patches;
+using static BFPlus.Extensions.MainManager_Ext;
 
 namespace BFPlus.Extensions
 {
@@ -16,6 +17,8 @@ namespace BFPlus.Extensions
         public Sprite[] categoryIcons;
         public GameObject medalCategoryIcon = null;
         public int chooseMedalCategory = -1;
+        public int presetId = -1;
+        public SpriteRenderer[] presetIcons = new SpriteRenderer[3];
         public static PauseMenu_Ext Instance
         {
             get
@@ -192,6 +195,194 @@ namespace BFPlus.Extensions
             {
                 Destroy(Instance.medalCategoryIcon);
             }
+        }
+
+        public IEnumerator SaveMedalPreset()
+        {
+            if (AnyMedalEquipped())
+            {
+                var preset = new MainManager_Ext.MedalPreset();
+
+                for (int i = 0; i < MainManager.instance.badges.Count; i++)
+                {
+                    if (MainManager.instance.badges[i][1] != -2)
+                    {
+                        preset.medals.Add(new int[] { MainManager.instance.badges[i][0], MainManager.instance.badges[i][1] });
+                    }
+                }
+
+                MainManager.instance.DestroyList();
+                MainManager.pausemenu.gameObject.SetActive(false);
+
+                MainManager.instance.StartCoroutine(MainManager.SetText("|letterprompt,5,-11,-212,8|", null, null));
+                yield return new WaitUntil(() => !MainManager.instance.message);
+                preset.name = MainManager.instance.flagstring[5];
+                preset.mpNeeded = MainManager.instance.maxbp - MainManager.instance.bp;
+
+                MainManager_Ext.Instance.medalPresets[Instance.presetId] = preset;
+                MainManager.pausemenu.canpick = true;
+                MainManager.PlaySound("ATKSuccess");
+                MainManager.pausemenu.gameObject.SetActive(true);
+                ResetToPage();
+                yield break;
+            }
+
+            MainManager.pausemenu.canpick = true;
+            MainManager.PlayBuzzer();
+        }
+
+        public void DeEquipAllBadges()
+        {
+            for (int i = 0; i < MainManager.instance.badges.Count; i++)
+            {
+                MainManager.instance.badges[i][1] = -2;
+            }
+            MainManager.instance.bp = MainManager.instance.maxbp;
+            MainManager.ApplyBadges();
+        }
+
+        public static bool HasAllBadges(List<int[]> required)
+        {
+            var originalCounts = MainManager.instance.badges
+                .GroupBy(b => b[0])
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            foreach (var group in required.GroupBy(b => b[0]))
+            {
+                int badgeId = group.Key;
+                int neededCount = group.Count();
+
+                if (!originalCounts.TryGetValue(badgeId, out int availableCount) || availableCount < neededCount)
+                {
+                    PauseMenu_Ext.Instance.UpdateDesc(MainManager.menutext[306]);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public void LoadMedalPreset(MedalPreset preset)
+        {
+            DeEquipAllBadges();
+
+            if (HasAllBadges(preset.medals) && HasEnoughMp(preset) && MainManager.instance.playerdata.Length == 3)
+            {
+                for(int i=0;i < preset.medals.Count; i++)
+                {
+                    int index = MainManager.instance.badges.FindIndex(b => b[0] == preset.medals[i][0] && b[1] == -2);
+                    if(index != -1)
+                    {
+                        MainManager.instance.badges[index][1] = preset.medals[i][1];
+                    }
+                    MainManager.instance.bp -= Mathf.Clamp(Convert.ToInt32(MainManager.badgedata[preset.medals[i][0], 2]), 0, MainManager.instance.flags[613] ? 1 : 999);
+                }
+                MainManager.ApplyBadges();
+                MainManager.PlaySound("ATKSuccess");
+                ResetToPage();
+                return;
+            }
+
+            MainManager.pausemenu.canpick = true;
+            MainManager.PlayBuzzer();
+        }
+
+        public void ResetToPage()
+        {
+            MainManager.listY = -1;
+            MainManager.pausemenu.page = 3;
+            Instance.presetId = -1;
+            MainManager.ResetList();
+            MainManager.pausemenu.UpdateText();
+        }
+
+        public void DeletePreset()
+        {
+            MainManager_Ext.Instance.medalPresets[Instance.presetId] = null;
+            MainManager.PlaySound("ATKSuccess");
+            ResetToPage();
+        }
+
+        public void GetPresetCode(MedalPreset preset)
+        {
+            GUIUtility.systemCopyBuffer = Compressor.CompressAndEncode(preset.ToString());
+            MainManager.PlaySound("ATKSuccess");
+            UpdateDesc(MainManager.menutext[288]);
+        }
+
+        public IEnumerator LoadFromCodePreset()
+        {
+            string lastClipboard = "";
+            UpdateDesc(MainManager.menutext[289]);
+
+            while (!MainManager.GetKey(5, false))
+            {
+                if(lastClipboard != GUIUtility.systemCopyBuffer)
+                {
+                    lastClipboard = GUIUtility.systemCopyBuffer;
+                    string presetString = Compressor.DecodeAndDecompress(lastClipboard);
+
+                    var preset = MedalPreset.GetPresetFromString(presetString);
+                    if(preset != null)
+                    {
+                        UpdateDesc(MainManager.menutext[290]);
+                        MainManager.PlaySound("ATKSuccess");
+                        CalculatePresetMpNeeded(preset);
+
+                        MainManager_Ext.Instance.medalPresets[Instance.presetId] = preset;
+                        yield return EventControl.halfsec;
+                        MainManager.pausemenu.canpick = true;
+                        ResetToPage();
+                        yield break;
+                    }
+                    else
+                    {
+                        UpdateDesc(MainManager.menutext[289]);
+                    }
+                }
+                yield return null;
+            }
+            UpdateDesc(MainManager.menutext[303]);
+            MainManager.pausemenu.canpick = true;
+            MainManager.PlaySound("BadgeDequip");
+        }
+
+        void CalculatePresetMpNeeded(MedalPreset preset)
+        {
+            preset.mpNeeded = 0;
+            for(int i = 0; i < preset.medals.Count; i++)
+            {
+                preset.mpNeeded += Mathf.Clamp(Convert.ToInt32(MainManager.badgedata[preset.medals[i][0], 2]), 0, MainManager.instance.flags[613] ? 1 : 999);
+            }
+        }
+
+        public void UpdateDesc(string text)
+        {
+            MainManager.DestroyText(MainManager.pausemenu.boxes[1].transform);
+            MainManager.pausemenu.StartCoroutine(MainManager.SetText(text, 0, null, false, false, new Vector3(-5.65f, 0.75f), Vector3.zero, Vector2.one, MainManager.pausemenu.boxes[1].transform, null));
+        }
+
+        public bool HasEnoughMp(MedalPreset preset)
+        {
+            int tpNeeded = preset.medals.Count(m => m[0] == (int)Medal.MPPlus) * 3;        
+            if(!(MainManager.instance.maxbp >= preset.mpNeeded - tpNeeded && MainManager.instance.maxtp > tpNeeded))
+            {
+                UpdateDesc(MainManager.menutext[307]);
+                return false;
+            }
+            return true;
+        }
+
+        public bool AnyMedalEquipped()
+        {
+            for (int i = 0; i < MainManager.instance.badges.Count; i++)
+            {
+                if (MainManager.instance.badges[i][1] != -2)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public class MedalCategory

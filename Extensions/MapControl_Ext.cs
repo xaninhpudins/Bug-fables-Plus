@@ -864,7 +864,7 @@ namespace BFPlus.Extensions
             GameObject cube = Instantiate(__instance.transform.Find("Cube").gameObject);
             cube.transform.parent = __instance.transform;
             cube.transform.position = new Vector3(50, 100, 0);
-            cube.transform.localScale = new Vector3(25, 1, 25);
+            cube.transform.localScale = new Vector3(25, 1, 35);
                 
             Medal[] medals = Enum.GetValues(typeof(Medal)).Cast<Medal>().ToArray();
             NewEnemies[] enemies = Enum.GetValues(typeof(NewEnemies)).Cast<NewEnemies>().Reverse().ToArray();
@@ -1261,10 +1261,10 @@ namespace BFPlus.Extensions
 
                 GameObject roachHouse2 = GameObject.Find("RoachHouse2").gameObject;
 
-                var mainAsset = MainManager_Ext.mapPrefabs.LoadAsset("RoachHouse2") as GameObject;
+                var mainAsset = MainManager_Ext.mapPrefabs.LoadAsset("RoachHouse3") as GameObject;
                 var meshes = mainAsset.GetComponentsInChildren<MeshFilter>(true);
 
-                Mesh newHouse = meshes.FirstOrDefault(m => m.name == "RoachHouse2").mesh;
+                Mesh newHouse = meshes.FirstOrDefault(m => m.name == "RoachHouse3").mesh;
                 roachHouse2.GetComponent<MeshFilter>().mesh = newHouse;
                 roachHouse2.GetComponent<MeshCollider>().sharedMesh = newHouse;
 

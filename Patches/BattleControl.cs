@@ -491,21 +491,6 @@ namespace BFPlus.Patches
         }
     }
 
-    [HarmonyPatch(typeof(BattleControl), "CheckDead")]
-    public class PatchBattleControlCheckDead
-    {
-        static void Prefix(BattleControl __instance, ref IEnumerator __result)
-        {
-            for (int i = 0; i != __instance.enemydata.Length; i++)
-            {
-                if (__instance.enemydata[i].hp <= 0 && __instance.enemydata[i].deathtype == 13)
-                {
-                    __instance.reservedata.Add(__instance.enemydata[i]);
-                }
-            }
-        }
-    }
-
     [HarmonyPatch(typeof(BattleControl), "PincerStatus")]
     public class PatchBattleControlPincerStatus
     {
@@ -655,10 +640,23 @@ namespace BFPlus.Patches
                 BattleControl_Ext.Instance.attackedThisTurn.Add(BattleControl_Ext.Instance.entityAttacking.battleid);
             }
 
+            bool attackerIsInked = attacker != null && !isFireOrPoison && MainManager.HasCondition(MainManager.BattleCondition.Inked, attacker.Value) > -1;
             //Smearcharge check
-            if(BattleControl_Ext.Instance.targetIsPlayer && attacker != null  && !isFireOrPoison && MainManager.HasCondition(MainManager.BattleCondition.Inked, attacker.Value) > -1 && MainManager.BadgeIsEquipped((int)Medal.Smearcharge, target.trueid)) 
+            if (BattleControl_Ext.Instance.targetIsPlayer && attackerIsInked && MainManager.BadgeIsEquipped((int)Medal.Smearcharge, target.trueid)) 
             {
                 entityExt.smearchargeActive = true;
+            }
+
+            if (attackerIsInked && MainManager.BadgeIsEquipped((int)Medal.Inkblot))
+            {
+                var attackerExt = Entity_Ext.GetEntity_Ext(attacker.Value.battleentity);
+
+                if (!attackerExt.inkblotActive)
+                {
+                    Vector3 particlePos = target.battleentity.transform.position + Vector3.up + target.battleentity.height * Vector3.up;
+                    BattleControl_Ext.Instance.ApplyStatus(BattleCondition.Inked, ref target, 2, "WaterSplash2", 0.8f, 1, "InkGet", particlePos, Vector3.one);
+                    attackerExt.inkblotActive = true;
+                }
             }
 
             return true;
@@ -675,7 +673,7 @@ namespace BFPlus.Patches
                 target.battleentity.Freeze();
             }
 
-            if (MainManager.BadgeIsEquipped((int)Medal.Perkfectionist) && !__instance.enemy && beforeDoDamageHp - __result == 0)
+            if (MainManager.BadgeIsEquipped((int)Medal.Perkfectionist) && !__instance.enemy && beforeDoDamageHp - __result == 0 && __result != 0 && beforeDoDamageHp != 0)
             {
                 BattleControl_Ext.Instance.perfectKill = true;
                 BattleControl_Ext.Instance.perfectKillAmount++;
@@ -735,7 +733,6 @@ namespace BFPlus.Patches
             if (!isFireOrPoison)
             {
                 //Nerfs Bubble shield by only allowing to block 1 attack.
-
                 int zommothId = battle.EnemyInField((int)MainManager.Enemies.Zommoth);
                 if (MainManager.HasCondition(MainManager.BattleCondition.Shield, target) > -1 && !(MainManager.lastevent == 182 && zommothId != -1 && battle.enemydata[zommothId].data != null & battle.enemydata[zommothId].data.Length >=0 && battle.enemydata[zommothId].data[0] == 0))
                 {

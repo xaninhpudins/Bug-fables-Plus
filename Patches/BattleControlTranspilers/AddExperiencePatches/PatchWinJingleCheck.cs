@@ -37,7 +37,7 @@ namespace BFPlus.Patches.BattleControlTranspilers.AddExperiencePatches
         {
             if (MainManager.musicvolume > 0f && MainManager.music[0].clip != null)
             {
-                if (MainManager.music[0].clip.name == "Battle6" || !MainManager_Ext.newBattleThemes)
+                if (MainManager.music[0].clip.name == "Battle6")
                     return false;
 
                 string[] possibleBattleTheme = new string[] { 
@@ -113,6 +113,11 @@ namespace BFPlus.Patches.BattleControlTranspilers.AddExperiencePatches
 
         static AudioSource GetWinJingle()
         {
+            if (!MainManager_Ext.newBattleThemes)
+            {
+                return MainManager.PlaySound("BattleWon");
+            }
+
             string newJingle = "";
             switch (MainManager.instance.areaid)
             {

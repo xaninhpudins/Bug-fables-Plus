@@ -69,7 +69,7 @@ namespace BFPlus.Patches.PauseMenuTranspilers
                 string descText = $"Browse your {category.name} medals!";
 
                 if (MainManager.listvar[MainManager.instance.option] == 0)
-                    descText = "Browse all of your medals!";
+                    descText = MainManager.menutext[293];
 
                 MainManager.pausemenu.StartCoroutine(MainManager.SetText(string.Concat(new object[]
                 {
@@ -92,6 +92,10 @@ namespace BFPlus.Patches.PauseMenuTranspilers
         static string CheckMedalLabelText()
         {
             int page = MainManager.pausemenu.page;
+
+            if (page != 3)
+                PauseMenu_Ext.Instance.presetId = -1;
+
             if (page != 0)
             {
                 PauseMenu_Ext.Instance.chooseMedalCategory = -1;
@@ -103,7 +107,65 @@ namespace BFPlus.Patches.PauseMenuTranspilers
                 PauseMenu_Ext.MedalCategory category = PauseMenu_Ext.Instance.medalCategories[PauseMenu_Ext.Instance.chooseMedalCategory];
                 return category.name;
             }
+
+            if(page == 3)
+            {
+                if (PauseMenu_Ext.Instance.presetId == -1)
+                    return MainManager.menutext[292];
+
+                var preset = MainManager_Ext.Instance.medalPresets[PauseMenu_Ext.Instance.presetId];
+
+                if (preset != null)
+                    return preset.name;
+
+                return "Empty Preset";
+                
+            }
             return MainManager.menutext[page == 0 ? 27 : page == 1 ? 260 : 61];
+        }
+    }
+
+    public class PatchLoadPresetList : PatchBasePauseMenuUpdateText
+    {
+        public PatchLoadPresetList()
+        {
+            priority = 658;
+        }
+        protected override void ApplyPatch(ILCursor cursor)
+        {
+            ILLabel label = cursor.DefineLabel();
+            cursor.GotoNext(i => i.MatchLdfld(AccessTools.Field(typeof(PauseMenu), "page")), i => i.MatchLdcI4(2), i=>i.MatchBneUn(out _));
+            cursor.GotoNext(i => i.MatchBneUn(out _));
+            cursor.Emit(OpCodes.Beq, label);
+            cursor.Remove();
+            cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(PatchLoadPresetList), "LoadPresetList"));
+            cursor.Emit(OpCodes.Ret);
+            cursor.MarkLabel(label);
+        }
+
+        static void LoadPresetList()
+        {
+            MainManager.ShowItemList((int)NewListType.MedalPreset, Vector2.zero, false, false);
+            MainManager.instance.itemlist.parent = MainManager.pausemenu.boxes[0].transform;
+            MainManager.instance.itemlist.localScale = Vector3.one;
+            MainManager.instance.itemlist.localPosition = new Vector2(-5.3f, 3.05f);
+            if (MainManager.instance.cursor == null)
+            {
+                MainManager.CreateCursor(MainManager.pausemenu.boxes[0].transform);
+                MainManager.instance.cursor.transform.parent = MainManager.pausemenu.boxes[0].transform;
+            }
+            int menuText = 291;
+
+            if(PauseMenu_Ext.Instance.presetId != -1)
+            {
+                menuText = 299 + MainManager.listvar[MainManager.instance.option];
+
+                if(MainManager.listvar[MainManager.instance.option] >= 5)
+                {
+                    menuText = 305;
+                }
+            }
+            MainManager.pausemenu.StartCoroutine(MainManager.SetText(MainManager.menutext[menuText], 0, null, false, false, new Vector3(-5.65f, 0.75f), Vector3.zero, Vector2.one, MainManager.pausemenu.boxes[1].transform, null));
         }
     }
 }

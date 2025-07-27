@@ -16,7 +16,7 @@ using BFPlus.Extensions;
 using System.Linq;
 namespace BFPlus
 {
-    [BepInPlugin("com.Lyght.BugFables.plugins.BFPlus", "BFPlus", "1.0.4.1")]
+    [BepInPlugin("com.Lyght.BugFables.plugins.BFPlus", "BFPlus", "1.0.4.8")]
     [BepInProcess("Bug Fables.exe")]
     public class BFPlusPlugin : BaseUnityPlugin
     {
@@ -114,7 +114,7 @@ namespace BFPlus
             PatchLoader.SetupILHook(AccessTools.Method(typeof(NPCControl), "OnTriggerEnter"), typeof(PatchBaseNPCControlOnTriggerEnter));
             PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(NPCControl), "CheckItem")), typeof(PatchBaseNPCControlCheckItem));
             PatchLoader.SetupILHook(AccessTools.Method(typeof(NPCControl), "CheckBump"), typeof(PatchBaseNPCControlCheckBump));
-
+            PatchLoader.SetupILHook(AccessTools.Method(typeof(NPCControl), "CreateDescWindow", new Type[] {typeof(bool)}), typeof(PatchBaseNPCControlCreateDescWindow));
 
             //MapControl
             PatchLoader.SetupILHook(AccessTools.Method(typeof(MapControl), "CreateEntities"), typeof(PatchBaseMapControlCreateEntities));
@@ -125,14 +125,18 @@ namespace BFPlus
             PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(PlayerControl), "DoActionTap")), typeof(PatchBasePlayerControlDoActionTap));
             PatchLoader.SetupILHook(AccessTools.Method(typeof(PlayerControl), "Movement"), typeof(PatchBasePlayerControlMovement));
 
-
             //CardGame
-            /*PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(CardGame), "StartCard")), typeof(PatchBaseCardGameStartCard));
+            PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(CardGame), "StartCard")), typeof(PatchBaseCardGameStartCard));
             PatchLoader.SetupILHook(AccessTools.Method(typeof(CardGame), "LoadCardData"), typeof(PatchBaseCardGameLoadCardData));
-            PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(CardGame), "BuildWindow")), typeof(PatchBaseCardGameBuildWindow));*/
+            PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(CardGame), "BuildWindow")), typeof(PatchBaseCardGameBuildWindow));
+            PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(CardGame), "PullCard")), typeof(PatchBaseCardGamePullCard));
+            PatchLoader.SetupILHook(AccessTools.Method(typeof(CardGame), "GetInput"), typeof(PatchBaseCardGameGetInput));
+            PatchLoader.SetupILHook(AccessTools.Method(typeof(CardGame), "PlayEnemyCards"), typeof(PatchBaseCardGamePlayEnemyCards));
+            PatchLoader.SetupILHook(AccessTools.Method(typeof(CardGame), "CreateCard"), typeof(PatchBaseCardGameCreateCard));
 
             //BattleControl
             PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(BattleControl), "IceRain")), typeof(PatchBaseBattleControlIceRain));
+            PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(BattleControl), "VineAttack")), typeof(PatchBaseBattleControlVineAttack));
             PatchLoader.SetupILHook(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(BattleControl), "GameOver")), typeof(PatchBaseBattleControlGameover));
             PatchLoader.SetupILHook(AccessTools.Method(typeof(BattleControl), "RevivePlayer", new Type[] {typeof(int), typeof(int), typeof(bool)}), typeof(PatchBaseBattleControlRevivePlayer));
             PatchLoader.SetupILHook(AccessTools.Method(typeof(BattleControl), "CheckEvent"), typeof(PatchBaseBattleControlCheckEvent));
