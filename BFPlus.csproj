@@ -587,6 +587,7 @@
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\PatchFrigidCoffinFreeze.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\YieldUseCharmHP.cs" />
     <Compile Include="Patches\BattleControlTranspilers\EventDialoguePatches\PatchTidalWyrmDeathEvent.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\EventDialoguePatches\PatchVeguDeathEvent.cs" />
     <Compile Include="Patches\BattleControlTranspilers\EventDialoguePatches\PatchWaspKingDeathEvent.cs" />
     <Compile Include="Patches\BattleControlTranspilers\GetChoiceInput\PatchDoubleDip.cs" />
     <Compile Include="Patches\BattleControlTranspilers\GetChoiceInput\PatchHoloSkillCheck.cs" />
@@ -597,6 +598,7 @@
     <Compile Include="Patches\BattleControlTranspilers\PatchBattleControlRelay.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchBattleControlRevivePlayer.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchBattleControlUpdate.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\PatchBattleControlVineAttack.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchClearBombEffect.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchClearStatus.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchCounterAnimation.cs" />

@@ -475,9 +475,6 @@ namespace BFPlus.Patches
     {
         static void Prefix(MainManager __instance)
         {
-            if (__instance.GetComponent<MainManager_Ext>() == null)
-                __instance.gameObject.AddComponent<MainManager_Ext>();
-
             if (MainManager_Ext.assetBundle == null)
             {
                 MainManager_Ext.assetBundle = AssetBundle.LoadFromMemory(Properties.Resources.vengeance);
@@ -771,6 +768,16 @@ namespace BFPlus.Patches
                                 BattleControl_Ext.stylishReward = reward;
                             }
                         }
+
+                        if(data.Length > 19)
+                        {
+                            string[] presetData = data[19].Split(new char[] { '@' });
+
+                            for(int i=0;i<presetData.Length;i++)
+                            {
+                                MainManager_Ext.Instance.medalPresets[i] = MainManager_Ext.MedalPreset.GetPresetFromString(presetData[i]);
+                            }
+                        }
                     }
                 }
             }
@@ -790,6 +797,7 @@ namespace BFPlus.Patches
             }
             List<string> temp = data.ToList();
             temp.Add(BattleControl_Ext.stylishBarAmount + "@" + BattleControl_Ext.stylishReward);
+            temp.Add(string.Join("@", MainManager_Ext.Instance.medalPresets.Where(p => p != null).Select(p => p.ToString())));
             __result = String.Join("\n", temp.ToArray());
         }
     }

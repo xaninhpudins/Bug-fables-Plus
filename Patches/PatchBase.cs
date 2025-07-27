@@ -268,4 +268,6 @@ namespace BFPlus.Patches.DoActionPatches
 
     public abstract class PatchBaseNPCControlCreateDescWindow : PatchBase { }
 
+    public abstract class PatchBaseBattleControlVineAttack : PatchBase { }
+
 }

@@ -921,7 +921,7 @@ namespace BFPlus.Extensions
                 var data = battle.reservedata[i];
                 data.turnssincedeath++;
                 battle.reservedata[i] = data;
-                if (battle.reservedata[i].animid == (int)NewEnemies.FirePopper && battle.reservedata[i].turnssincedeath >= 2)
+                if (battle.reservedata[i].animid == (int)NewEnemies.FirePopper && battle.reservedata[i].turnssincedeath >= 1)
                 {
                     EntityControl firePopper = battle.reservedata[i].battleentity;
                     MainManager.PlaySound("Charge7", 0.9f, 1);
@@ -930,7 +930,7 @@ namespace BFPlus.Extensions
                     firePopper.overrideanim = true;
                     firePopper.animstate = 110;
                     MainManager.PlaySound("Boing1", 1f, 1);
-                    battle.ReviveEnemy(i, 0.5f, false, true);
+                    battle.ReviveEnemy(i, 0.75f, false, true);
                     revived = true;
                     yield return EventControl.halfsec;
                     break;
@@ -2041,7 +2041,7 @@ namespace BFPlus.Extensions
                 }
                 else
                 {
-                    int target = battle.target;
+                    int target = MainManager.battle.avaliabletargets[battle.target].battleentity.battleid;
                     var targetEntity = battle.enemydata[target].battleentity;
                     endPos = targetEntity.transform.position + battle.enemydata[target].cursoroffset + new Vector3(0f, targetEntity.height - 1f);
                 }
@@ -2985,7 +2985,8 @@ namespace BFPlus.Extensions
         {
             battle.nonphyscal = true;
             battle.dontusecharge = true;
-            int target = battle.target;
+            MainManager.BattleData targetData = MainManager.battle.avaliabletargets[battle.target];
+            int target = targetData.battleentity.battleid;
 
             int selectedItem = battle.selecteditem;
             if (selectedItem == (int)NewItem.WebWad)

@@ -27,6 +27,7 @@ namespace BFPlus.Patches
         static void prefix(PauseMenu __instance)
         {
             PauseMenu_Ext.Instance.chooseMedalCategory = -1;
+            PauseMenu_Ext.Instance.presetId = -1;
             PauseMenu_Ext.Instance.DestroyMedalCategoryIcon();
         }
     }

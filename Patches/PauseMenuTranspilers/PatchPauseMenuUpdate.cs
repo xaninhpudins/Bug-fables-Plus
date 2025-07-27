@@ -90,11 +90,17 @@ namespace BFPlus.Patches.PauseMenuTranspilers.UpdatePatches
             cursor.Emit(OpCodes.Brfalse, label);
             cursor.Emit(OpCodes.Br, jumpLabel);
             cursor.MarkLabel(label);
+
+            ILLabel outLabel = null;
+            cursor.GotoPrev(i => i.MatchLdcI4(2));
+            cursor.GotoNext(i => i.MatchBge(out outLabel));
+            cursor.Emit(OpCodes.Beq, outLabel);
+            cursor.Remove();
         }
 
         static bool CanChooseMedalCategory()
         {
-            if(MainManager.listtype == (int)NewListType.MedalCategories && MainManager.pausemenu.page == 0 && PauseMenu_Ext.Instance.chooseMedalCategory == -1 && MainManager.instance.option < MainManager.listvar.Length)
+            if(MainManager.pausemenu.page == 0 && PauseMenu_Ext.Instance.chooseMedalCategory == -1 && MainManager.instance.option < MainManager.listvar.Length)
             {
                 PauseMenu_Ext.Instance.chooseMedalCategory = MainManager.listvar[MainManager.instance.option];
                 MainManager.listY = -1;
@@ -114,9 +120,61 @@ namespace BFPlus.Patches.PauseMenuTranspilers.UpdatePatches
 
                     PauseMenu_Ext.Instance.medalCategoryIcon = MainManager.NewUIObject("CategoryIcon", MainManager.pausemenu.boxes[0].transform, position, Vector3.one*0.45f, sprite);
                 }
+                return true;
+            }
+
+            if(MainManager.pausemenu.page == 3 && MainManager.instance.option < MainManager.listvar.Length)
+            {
+                if(PauseMenu_Ext.Instance.presetId == -1)
+                {
+                    //we are in the preset list
+                    PauseMenu_Ext.Instance.presetId = MainManager.listvar[MainManager.instance.option];
+                    MainManager.listY = -1;
+
+                    MainManager.ResetList();
+                    MainManager.pausemenu.UpdateText();
+                    MainManager.PlaySound("PageFlip");
+                }
+                else
+                {
+                    var preset = MainManager_Ext.Instance.medalPresets[PauseMenu_Ext.Instance.presetId];
+
+                    if(MainManager.instance.option != 1 && MainManager.instance.option != 4 && preset == null)
+                    {
+                        MainManager.PlayBuzzer();
+                        return true;
+                    }
+
+                    switch (MainManager.instance.option)
+                    {
+                        case 0:
+                            PauseMenu_Ext.Instance.LoadMedalPreset(preset);
+                            break;
+
+                        case 1:
+                            MainManager.pausemenu.canpick = false;
+                            MainManager.instance.StartCoroutine(PauseMenu_Ext.Instance.SaveMedalPreset());
+                            break;
+
+                        case 2:
+                            PauseMenu_Ext.Instance.DeletePreset();
+                            break;
+
+                        case 3:
+                            PauseMenu_Ext.Instance.GetPresetCode(preset);
+                            break;
+
+                        case 4:
+                            MainManager.pausemenu.canpick = false;
+                            MainManager.instance.StartCoroutine(PauseMenu_Ext.Instance.LoadFromCodePreset());
+                            break;
+
+                    }
+                }
 
                 return true;
             }
+
             return false;
         }
     }
@@ -154,11 +212,54 @@ namespace BFPlus.Patches.PauseMenuTranspilers.UpdatePatches
                     MainManager.LoadList(MainManager.pausemenu.lastmedal);
                 }
 
-                MainManager.pausemenu.page = 0;
+                if(MainManager.pausemenu.page == 3 && PauseMenu_Ext.Instance.presetId != -1)
+                {
+                    PauseMenu_Ext.Instance.presetId = -1;
+                }
+                else
+                {
+                    MainManager.pausemenu.page = 0;
+                }
                 MainManager.pausemenu.UpdateText();
                 MainManager.PlaySound("PageFlip");
                 return true;
             }
+
+            if(PauseMenu_Ext.Instance.presetId != -1 && MainManager.pausemenu.page == 3 && MainManager_Ext.Instance.medalPresets[PauseMenu_Ext.Instance.presetId] != null && MainManager.instance.option >= 5)
+            {
+                MainManager_Ext.MedalPreset preset = MainManager_Ext.Instance.medalPresets[PauseMenu_Ext.Instance.presetId];
+
+                int index = MainManager.instance.option - 5;
+                //right
+                if (MainManager.GetKey(3, false))
+                {
+                    preset.icons[index]++;
+
+                    if(preset.icons[index] >= PauseMenu_Ext.Instance.categoryIcons.Length)
+                    {
+                        preset.icons[index] = 0;
+                    }
+                    MainManager.PlayScrollSound();
+                    PauseMenu_Ext.Instance.presetIcons[index].sprite = PauseMenu_Ext.Instance.categoryIcons[preset.icons[index]];
+                    return true;
+                }
+
+                //left
+                if (MainManager.GetKey(2, false))
+                {
+                    preset.icons[index]--;
+
+                    if (preset.icons[index] < 0)
+                    {
+                        preset.icons[index] = PauseMenu_Ext.Instance.categoryIcons.Length-1;
+                    }
+                    MainManager.PlayScrollSound();
+                    PauseMenu_Ext.Instance.presetIcons[index].sprite = PauseMenu_Ext.Instance.categoryIcons[preset.icons[index]];
+                    return true;
+                }
+            }
+
+
             return false;
         }
     }
@@ -174,6 +275,21 @@ namespace BFPlus.Patches.PauseMenuTranspilers.UpdatePatches
         {
             cursor.GotoNext(i => i.MatchLdarg0(), i => i.MatchLdfld(AccessTools.Field(typeof(PauseMenu), "lastmedal")));
             cursor.RemoveRange(3);
+        }
+    }
+
+    public class PatchAddNewPage : PatchBasePauseMenuUpdate
+    {
+        public PatchAddNewPage()
+        {
+            priority = 1186;
+        }
+        protected override void ApplyPatch(ILCursor cursor)
+        {
+            cursor.GotoNext(i => i.MatchLdfld(AccessTools.Field(typeof(PauseMenu), "page")), i=>i.MatchLdcI4(2), i=>i.MatchBle(out _));
+            cursor.GotoNext(i => i.MatchLdcI4(2));
+            cursor.Emit(OpCodes.Ldc_I4, 3);
+            cursor.Remove();
         }
     }
 

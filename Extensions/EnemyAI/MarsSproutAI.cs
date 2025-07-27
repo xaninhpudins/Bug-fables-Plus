@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 using static BFPlus.Extensions.BattleControl_Ext;
+using static UnityEngine.ParticleSystem;
 
 namespace BFPlus.Extensions.EnemyAI
 {
@@ -18,7 +19,7 @@ namespace BFPlus.Extensions.EnemyAI
             Bite,
             UndergroundBite,
             SeedRain,
-            HealMars,
+            BuffMars,
             MultiSeeds
         }
 
@@ -26,7 +27,6 @@ namespace BFPlus.Extensions.EnemyAI
         int BITE_DAMAGE = 5;
         int SEED_DAMAGE = 3;
         int UNDERGROUND_STRIKE_DAMAGE = 6;
-        int MARS_HEAL = 10;
         Vector3 offset = new Vector3(2f, 1.5f, -0.1f);
         public override IEnumerator DoBattleAI(EntityControl entity, int actionid)
         {
@@ -60,21 +60,25 @@ namespace BFPlus.Extensions.EnemyAI
                 int marsIndex = battle.EnemyInField((int)NewEnemies.Mars);
                 float hpPercentMars = battle.HPPercent(battle.enemydata[marsIndex]);
 
-                List<Attacks> chances = new List<Attacks>() { Attacks.Bite, Attacks.Bite, Attacks.UndergroundBite, Attacks.SeedRain, Attacks.MultiSeeds };
-
-                if (hpPercentMars <= 0.75f)
+                Dictionary<Attacks, int> attacks = new Dictionary<Attacks, int>()
                 {
-                    if (battle.enemydata[actionid].data[0] <= 0)
-                    {
-                        chances.AddRange(new Attacks[] { Attacks.HealMars, Attacks.HealMars });
-                    }
-                    else
-                    {
-                        battle.enemydata[actionid].data[0]--;
-                    }
+                    { Attacks.Bite, 40},
+                    { Attacks.UndergroundBite, 20},
+                    { Attacks.SeedRain, 20},
+                    { Attacks.MultiSeeds, 20}
+                };
+
+                if (battle.enemydata[actionid].data[0] <= 0 && battle.enemydata[marsIndex].charge == 0)
+                {
+                    attacks.Add(Attacks.BuffMars, 20);
                 }
-                
-                switch (chances[UnityEngine.Random.Range(0, chances.Count)])
+                else
+                {
+                    battle.enemydata[actionid].data[0]--;
+                }
+                Attacks attack = MainManager_Ext.GetWeightedResult(attacks);
+
+                switch (attack)
                 {
                     case Attacks.Bite:
                         yield return DoBite(entity, actionid);
@@ -85,9 +89,9 @@ namespace BFPlus.Extensions.EnemyAI
                     case Attacks.SeedRain:
                         yield return DoSeedRain(entity, actionid);
                         break;
-                    case Attacks.HealMars:
+                    case Attacks.BuffMars:
                         battle.enemydata[actionid].data[0] = 3;
-                        yield return HealMars(entity, actionid, marsIndex);
+                        yield return BuffMars(entity, actionid, marsIndex);
                         break;
                     case Attacks.MultiSeeds:
                         if (UnityEngine.Random.Range(0, 2) == 0)
@@ -263,7 +267,7 @@ namespace BFPlus.Extensions.EnemyAI
         //Healsmoke
         //flip first bud
         //anim 113
-        IEnumerator HealMars(EntityControl entity, int actionid, int marsIndex)
+        IEnumerator BuffMars(EntityControl entity, int actionid, int marsIndex)
         {
             battle.dontusecharge = true;
             bool flip = entity.flip;
@@ -276,9 +280,15 @@ namespace BFPlus.Extensions.EnemyAI
             yield return EventControl.quartersec;
 
             MainManager.PlaySound("HealBreath");
-            MainManager.PlayParticle("HealSmoke", null, entity.extras[1].transform.position + new Vector3(entity.flip ? 0.9f : (-0.9f), 0f, -0.1f), new Vector3(0f, (float)(entity.flip ? 90 : (-90)), 90f), 5f);
+            GameObject smokeParticle = MainManager.PlayParticle("HealSmoke", null, entity.extras[1].transform.position + new Vector3(entity.flip ? 0.9f : (-0.9f), 0f, -0.1f), new Vector3(0f, (float)(entity.flip ? 90 : (-90)), 90f), 5f);
+            ParticleSystem ps = smokeParticle.GetComponent<ParticleSystem>();
+            var main = ps.main;
+            main.startColor = new MinMaxGradient(Color.green, new Color(0.5647f, 0.9333f, 0.5647f));
+
             yield return new WaitForSeconds(2);
-            battle.Heal(ref battle.enemydata[marsIndex], MARS_HEAL, false);
+            MainManager.PlaySound("StatUp", -1, 1.25f, 1f);
+            battle.StartCoroutine(battle.StatEffect(battle.enemydata[marsIndex].battleentity, 4));
+            battle.enemydata[marsIndex].charge = Mathf.Clamp(battle.enemydata[marsIndex].charge + 2, 0, 3);
             yield return null;
 
             entity.flip = flip;
