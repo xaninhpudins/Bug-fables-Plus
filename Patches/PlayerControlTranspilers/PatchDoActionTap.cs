@@ -70,6 +70,7 @@ namespace BFPlus.Patches.PlayerControlTranspilers
             DialogueAnim pillar = (UnityEngine.Object.Instantiate(Resources.Load("Prefabs/Objects/FirePillar 1"), pillarPos, Quaternion.identity) as GameObject).AddComponent<DialogueAnim>();
             pillar.transform.localScale = new Vector3(0f, 0.5f, 0f);
             pillar.targetscale = new Vector3(0.45f, 0.5f, 0.45f);
+            pillar.transform.parent = MainManager.map.transform;
             pillar.shrink = false;
             pillar.shrinkspeed = 0.05f;
 

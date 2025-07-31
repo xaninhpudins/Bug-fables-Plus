@@ -714,6 +714,9 @@ namespace BFPlus.Extensions
             {
                 ChangeCollider(baseObject.Find(obj).gameObject);
             }
+
+
+            baseObject.Find("Crate (1)").localScale = new Vector3(2.1786f, 1, 1.6017f);
             stall.GetChild(0).gameObject.AddComponent<MeshCollider>();
 
             GameObject crateObj = baseObject.Find("Crate").gameObject;
@@ -1197,10 +1200,14 @@ namespace BFPlus.Extensions
             //move crown to the ground
             house.transform.Find("artifacts_6").position = new Vector3(-16.92f, 1.38f, 5.38f);
 
-            GameObject newCrate = Instantiate(__instance.transform.Find("Inn").Find("Crate").gameObject);
+            GameObject originalCrate = __instance.transform.Find("Inn").Find("Crate").gameObject;
+
+            GameObject newCrate = Instantiate(originalCrate);
             newCrate.transform.parent = house.transform;
             newCrate.transform.localScale = new Vector3(0.0074f, 0.005f, 0.0055f);
             newCrate.transform.position = new Vector3(-16.92f, 0.48f, 5f);
+
+            ResetCollider(CreateCloneObj(originalCrate, __instance.transform.Find("Inn"), new Vector3(-9.22f, 12f, 15.30f), new Vector3(0, 0, 180), new Vector3(0.01f, 0.01f, 0.005f))); 
         }
 
         public static void ChangeBugariaResidential(MapControl __instance)

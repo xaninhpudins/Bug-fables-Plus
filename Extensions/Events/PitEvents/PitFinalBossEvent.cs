@@ -179,12 +179,16 @@ namespace BFPlus.Extensions.Events.PitEvents
             MainManager.FadeOut();
             yield return EventControl.halfsec;
 
-            if (MainManager.BadgeIsEquipped(11) || MainManager.instance.flags[614])
+            if (!MainManager.instance.flags[857])
             {
-                MainManager.UpdateJounal(MainManager.Library.Logbook, (int)NewAchievement.GodofWar);
+                if (MainManager.BadgeIsEquipped(11) || MainManager.instance.flags[614])
+                {
+                    MainManager.UpdateJounal(MainManager.Library.Logbook, (int)NewAchievement.GodofWar);
+                }
+                MainManager.UpdateJounal(MainManager.Library.Logbook, (int)NewAchievement.UndergroundExplorer);
+                MainManager.AddPrizeMedal((int)NewPrizeFlag.Mars);
             }
-            MainManager.UpdateJounal(MainManager.Library.Logbook, (int)NewAchievement.UndergroundExplorer);
-            MainManager.AddPrizeMedal((int)NewPrizeFlag.Mars);
+
             foreach (var bud in buds)
             {
                 bud.StartCoroutine(GrowBud(bud, Vector3.zero, 120f));

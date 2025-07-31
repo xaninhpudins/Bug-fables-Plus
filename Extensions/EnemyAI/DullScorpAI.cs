@@ -120,7 +120,6 @@ namespace BFPlus.Extensions.EnemyAI
 
 				yield return EventControl.thirdsec;
 
-
 				Vector3 iceballPos = front ? new Vector3(-1.2f, 2.2f, -0.7f) : new Vector3(-1.2f, 3.2f, 0.1f);
 				Transform iceBall = CreateIceBall(entity.transform.position + iceballPos);
 				float a = 0f;
@@ -201,11 +200,14 @@ namespace BFPlus.Extensions.EnemyAI
                 //randomize enemy type
                 int choosenEnemy = (int)possibleEnemies[UnityEngine.Random.Range(0, possibleEnemies.Length)] - 1;
 
-				switch (choosenEnemy + 1)
+				Vector3 localPos = new Vector3(0.001f, -0.002f, 0);
+
+                switch (choosenEnemy + 1)
 				{
 					case (int)MainManager.AnimIDs.Cape:
 						enemyID = (int)MainManager.Enemies.Cape;
-						break;
+						localPos = new Vector3(0.001f, -0.008f, 0);
+                        break;
 
 					case (int)MainManager.AnimIDs.Midge:
 						enemyID = (int)NewEnemies.Frostfly;
@@ -219,7 +221,7 @@ namespace BFPlus.Extensions.EnemyAI
 				enemy.anim.speed = 0f;
 				enemy.animstate = (int)MainManager.Animations.Hurt;
 				enemy.gameObject.transform.parent = iceball.transform;
-				enemy.transform.localPosition = new Vector3(0.001f, -0.002f, 0);
+				enemy.transform.localPosition = localPos;
 			}
 			iceball.transform.position = new Vector3(0f, -10f, entity.transform.position.z + 0.3f);
 			digParticle.transform.localScale = Vector3.one * 3f;

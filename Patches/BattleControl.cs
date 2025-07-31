@@ -121,7 +121,7 @@ namespace BFPlus.Patches
                 {
                     if (__instance.action)
                     {
-                        __instance.StartCoroutine(BattleControl_Ext.Instance.WaitForActionGourmet());
+                        __instance.StartCoroutine(BattleControl_Ext.Instance.WaitForActionGourmet(currentTurn));
                     }
                     else
                     {

@@ -1,11 +1,7 @@
-﻿using HarmonyLib;
-using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Reflection;
 using UnityEngine;
+using static BattleControl;
 using static BFPlus.Extensions.BattleControl_Ext;
 using static UnityEngine.Object;
 using static UnityEngine.ParticleSystem;
@@ -32,7 +28,16 @@ namespace BFPlus.Extensions.EnemyAI
             float hpPercentMars = battle.HPPercent(battle.enemydata[actionid]);
             if (battle.enemydata[actionid].data == null)
             {
-                battle.enemydata[actionid].data = new int[3];
+                battle.enemydata[actionid].data = new int[5];
+            }
+
+            if (hpPercentMars <= 0.7f && battle.enemydata[actionid].data[3] == 0)
+            {
+                yield return DoPhaseChange(entity, actionid, 3, (int)MainManager.Animations.Angry);
+            }
+            else if (hpPercentMars <= 0.4f && battle.enemydata[actionid].data[4] == 0)
+            {
+                yield return DoPhaseChange(entity, actionid, 4, (int)MainManager.Animations.Flustered);
             }
 
             Dictionary<Attacks, int> attacks = new Dictionary<Attacks, int>()
@@ -41,12 +46,11 @@ namespace BFPlus.Extensions.EnemyAI
                 { Attacks.VineAttack, 50},
             };
 
-
-            if (hpPercentMars <= 0.6f)
+            if (battle.enemydata[actionid].data[3] == 1)
             {
                 attacks.Add(Attacks.VineBarrage, 30);
             }
-            
+
             if (battle.enemydata.Length < 3 && battle.enemydata[actionid].data[0] <= 0)
             {
                 attacks.Add(Attacks.SummonBud, 40);
@@ -72,7 +76,7 @@ namespace BFPlus.Extensions.EnemyAI
                 case Attacks.SummonBud:
 
                     int summonAmount = 1;
-                    if(hpPercentMars <= 0.5f)
+                    if (battle.enemydata[actionid].data[3] == 1)
                     {
                         summonAmount = 3 - battle.enemydata.Length;
                     }
@@ -95,13 +99,12 @@ namespace BFPlus.Extensions.EnemyAI
             {
                 if (battle.enemydata[actionid].data[1] <= 0)
                 {
-                    if (UnityEngine.Random.Range(0,100) < 40 + battle.enemydata[actionid].data[2])
+                    if (UnityEngine.Random.Range(0, 100) < 40 + battle.enemydata[actionid].data[2])
                     {
                         BattleControl.SetDefaultCamera();
                         yield return DoFlowerettiAttack(entity, actionid, hpPercentMars);
                         battle.enemydata[actionid].data[2] = 0;
                         battle.enemydata[actionid].data[1] = 3;
-                        yield break;
                     }
                     battle.enemydata[actionid].data[2] += 10;
                 }
@@ -111,6 +114,33 @@ namespace BFPlus.Extensions.EnemyAI
                 }
 
             }
+            CheckIdleState(entity, actionid);
+        }
+
+        IEnumerator DoPhaseChange(EntityControl entity, int actionid, int dataId, int animstate)
+        {
+            int dialogueId = dataId == 3 ? 212 : 213;
+
+            entity.animstate = animstate;
+            MainManager.SetCamera(new Vector3(entity.transform.position.x - 2, entity.sprite.transform.localPosition.y + 3f, 2.5f));
+            yield return EventControl.halfsec;
+            MainManager.DialogueText(MainManager.commondialogue[dialogueId], entity.transform, null);
+            yield return new WaitUntil(() => !MainManager.instance.message);
+
+            BattleControl.SetDefaultCamera();
+            yield return EventControl.quartersec;
+
+            entity.animstate = animstate;
+            entity.basestate = entity.animstate;
+            Instance.startState = entity.animstate;
+
+            if (battle.enemydata.Length < 3)
+            {
+                int summonAmount = 3 - battle.enemydata.Length;
+                yield return SummonBud(entity, actionid, summonAmount);
+                battle.enemydata[actionid].data[0] = 3;
+            }
+            battle.enemydata[actionid].data[dataId] = 1;
         }
 
         //101 = getting in bud, simple
@@ -125,7 +155,7 @@ namespace BFPlus.Extensions.EnemyAI
             entity.animstate = 101;
             yield return EventControl.halfsec;
 
-            for(int i=0;i<amount; i++)
+            for (int i = 0; i < amount; i++)
             {
                 MainManager.PlaySound("Charge", -1, 0.8f, 1f);
                 entity.animstate = 105;
@@ -138,7 +168,7 @@ namespace BFPlus.Extensions.EnemyAI
                 GameObject head = entity.extras[1];
                 MainManager.PlaySound("PingShot");
 
-                SpriteRenderer seed = MainManager.NewSpriteObject(head.transform.position + Vector3.right*0.1f, null, MainManager.itemsprites[0, 23]);
+                SpriteRenderer seed = MainManager.NewSpriteObject(head.transform.position + Vector3.right * 0.1f, null, MainManager.itemsprites[0, 23]);
                 seed.material.color = new Color(0.63f, 0.129f, 0.129f);
                 float a = 0f;
                 float b = 40f;
@@ -146,7 +176,7 @@ namespace BFPlus.Extensions.EnemyAI
                 do
                 {
                     seed.transform.position = MainManager.BeizierCurve3(head.transform.position, freeSpace.Value, 10f, a / b);
-                    seed.transform.eulerAngles += new Vector3(0,0,20) * MainManager.TieFramerate(1f);
+                    seed.transform.eulerAngles += new Vector3(0, 0, 20) * MainManager.TieFramerate(1f);
                     a += MainManager.framestep;
                     yield return null;
                 }
@@ -156,7 +186,7 @@ namespace BFPlus.Extensions.EnemyAI
                 main.startColor = Color.red;
                 flowerPart.transform.position = seed.transform.position;
                 Destroy(seed.gameObject);
-                Destroy(flowerPart.gameObject,5);
+                Destroy(flowerPart.gameObject, 5);
 
                 yield return EventControl.tenthsec;
                 MainManager.PlaySound("VenusBudAppear", 0.8f, 1);
@@ -166,8 +196,9 @@ namespace BFPlus.Extensions.EnemyAI
             }
             yield return EventControl.quartersec;
             entity.animstate = 103;
-            yield return new WaitUntil(() => !battle.summonnewenemy);
             yield return EventControl.halfsec;
+            CheckIdleState(entity, actionid);
+            yield return new WaitUntil(() => !battle.summonnewenemy);
         }
 
         IEnumerator DoHugeSeed(EntityControl entity, int actionid)
@@ -210,19 +241,20 @@ namespace BFPlus.Extensions.EnemyAI
             Destroy(seed.gameObject);
             Destroy(flowerPart.gameObject, 5);
 
-            battle.DoDamage(actionid, battle.playertargetID, HUGE_SEED_DAMAGE, BattleControl.AttackProperty.DefDownOnBlock, battle.commandsuccess);
+            AttackProperty property = battle.enemydata[actionid].data[3] == 1 ? AttackProperty.DefDownOnBlock : AttackProperty.None;
+            battle.DoDamage(actionid, battle.playertargetID, HUGE_SEED_DAMAGE, property, battle.commandsuccess);
             yield return EventControl.quartersec;
             entity.animstate = 103;
             yield return EventControl.halfsec;
         }
-    
+
 
         IEnumerator DoVineBarrage(EntityControl entity, int actionid)
         {
             battle.nonphyscal = true;
             int vineAmount = 10;
             GameObject[] vines = new GameObject[vineAmount];
-            Vector3 startPoint = new Vector3(entity.transform.position.x -2, -6, 0.5f);
+            Vector3 startPoint = new Vector3(entity.transform.position.x - 2, -6, 0.5f);
             Vector3 endPoint = new Vector3(-10, startPoint.y, startPoint.z);
 
             Vector3 direction = (endPoint - startPoint).normalized;
@@ -245,7 +277,7 @@ namespace BFPlus.Extensions.EnemyAI
             entity.animstate = 100;
 
             yield return EventControl.tenthsec;
-            MainManager.PlaySound("Slash3",0.8f,1);
+            MainManager.PlaySound("Slash3", 0.8f, 1);
             yield return EventControl.tenthsec;
 
             MainManager.PlaySound("Rumble3");
@@ -253,19 +285,20 @@ namespace BFPlus.Extensions.EnemyAI
 
             yield return EventControl.quartersec;
 
+            CheckIdleState(entity, actionid);
             bool[] damaged = new bool[MainManager.instance.playerdata.Length];
             for (int i = 0; i < vines.Length; i++)
             {
                 yield return EventControl.tenthsec;
                 vines[i].transform.localScale *= 1.65f;
-                MainManager.PlaySound("Charge8",0.5f);
+                MainManager.PlaySound("Charge8", 0.5f);
                 MainManager.ShakeScreen(0.2f, 0.65f, true);
                 battle.StartCoroutine(LerpVine(vines[i], vines[i].transform.position, damaged, actionid));
                 yield return EventControl.tenthsec;
             }
 
             MainManager.ShakeScreen(new Vector3(0.1f, 0.05f, 0f), 0.5f, true);
-            yield return EventControl.tenthsec;
+            yield return new WaitUntil(() => MainManager.ArrayIsEmpty(vines));
         }
 
         IEnumerator LerpVine(GameObject vine, Vector3 startPos, bool[] damaged, int actionid)
@@ -278,7 +311,7 @@ namespace BFPlus.Extensions.EnemyAI
             {
                 vine.transform.position = Vector3.Lerp(startPos, startPos + Vector3.up * 5f, a / b);
 
-                if(a > b / 2 && !checkedDamage)
+                if (a > b / 2 && !checkedDamage)
                 {
                     checkedDamage = true;
                     for (int i = 0; i < MainManager.instance.playerdata.Length; i++)
@@ -294,8 +327,6 @@ namespace BFPlus.Extensions.EnemyAI
                         }
                     }
                 }
-
-
                 a += MainManager.TieFramerate(1f);
                 yield return null;
             }
@@ -316,11 +347,10 @@ namespace BFPlus.Extensions.EnemyAI
             Destroy(vine);
         }
 
-       
+
         IEnumerator DoFlowerettiAttack(EntityControl entity, int actionid, float hpPercentMars)
         {
             entity.animstate = 101; //covers in bud
-
             yield return EventControl.halfsec;
             MainManager.PlaySound("Charge", -1, 0.8f, 1f);
             entity.animstate = 105; //bud charges up
@@ -343,15 +373,15 @@ namespace BFPlus.Extensions.EnemyAI
 
             for (int i = 0; i < seedAmount; i++)
             {
-                seeds[i] = MainManager.NewSpriteObject(head.transform.position + (i+1) *Vector3.right*1f, null, MainManager.itemsprites[0, 23]);
+                seeds[i] = MainManager.NewSpriteObject(head.transform.position + (i + 1) * Vector3.right * 1f, null, MainManager.itemsprites[0, 23]);
                 seeds[i].material.color = new Color(0.63f, 0.129f, 0.129f);
 
-                Vector3 endPos = new Vector3(-3 + (i+1) * 3, head.transform.position.y+10, head.transform.position.z);
+                Vector3 endPos = new Vector3(-3 + (i + 1) * 3, head.transform.position.y + 10, head.transform.position.z);
                 battle.StartCoroutine(LerpStuff(60f, seeds[i].transform.position, endPos, seeds[i].transform, action));
             }
 
             yield return EventControl.halfsec;
-
+            CheckIdleState(entity, actionid);
             MainManager.PlaySound("Explosion2", 0.8f, 1);
 
             GameObject floweretti = Instantiate(Resources.Load("Prefabs/Particles/Floweretti")) as GameObject;
@@ -362,7 +392,7 @@ namespace BFPlus.Extensions.EnemyAI
             main.startColor = new MinMaxGradient(Color.red, new Color(1, 0.92f, 0.59f));
             main.loop = false;
             main.duration = 2.5f;
-            main.simulationSpeed= 1.25f;
+            main.simulationSpeed = 1.25f;
 
             var em = ps.emission;
             em.rateOverTimeMultiplier = 50;
@@ -370,14 +400,17 @@ namespace BFPlus.Extensions.EnemyAI
             yield return EventControl.sec;
             MainManager.PlaySound("StatUp");
             MainManager.PlaySound("Heal");
+
+            int buffTurns = battle.enemydata[actionid].data[3] == 1 ? 4 : 3;
+
             for (int i = 0; i < battle.enemydata.Length; i++)
             {
-                MainManager.SetCondition(MainManager.BattleCondition.AttackUp, ref battle.enemydata[i], 3);
-                MainManager.SetCondition(MainManager.BattleCondition.DefenseUp, ref battle.enemydata[i], 3);
+                MainManager.SetCondition(MainManager.BattleCondition.AttackUp, ref battle.enemydata[i], buffTurns);
+                MainManager.SetCondition(MainManager.BattleCondition.DefenseUp, ref battle.enemydata[i], buffTurns);
                 battle.StartCoroutine(battle.StatEffect(battle.enemydata[i].battleentity, 1));
                 battle.StartCoroutine(battle.StatEffect(battle.enemydata[i].battleentity, 0));
 
-                if(hpPercentMars <= 0.5f && i != actionid)
+                if (battle.enemydata[actionid].data[3] == 1 && i != actionid)
                 {
                     MainManager.PlaySound("Heal3");
                     if (i != actionid)
@@ -385,7 +418,7 @@ namespace BFPlus.Extensions.EnemyAI
                         battle.StartCoroutine(battle.StatEffect(battle.enemydata[i].battleentity, 5));
                         battle.enemydata[i].moreturnnextturn++;
                     }
-                    else
+                    else if (battle.enemydata[actionid].data[4] == 1)
                     {
                         battle.ClearStatus(ref battle.enemydata[actionid]);
                         MainManager.SetCondition(MainManager.BattleCondition.Sturdy, ref battle.enemydata[actionid], 2);
@@ -398,8 +431,8 @@ namespace BFPlus.Extensions.EnemyAI
             MainManager.PlaySound("StatDown");
             for (int i = 0; i < MainManager.instance.playerdata.Length; i++)
             {
-                MainManager.SetCondition(MainManager.BattleCondition.AttackDown, ref MainManager.instance.playerdata[i],3);
-                MainManager.SetCondition(MainManager.BattleCondition.DefenseDown, ref MainManager.instance.playerdata[i], 3);
+                MainManager.SetCondition(MainManager.BattleCondition.AttackDown, ref MainManager.instance.playerdata[i], buffTurns);
+                MainManager.SetCondition(MainManager.BattleCondition.DefenseDown, ref MainManager.instance.playerdata[i], buffTurns);
                 battle.StartCoroutine(battle.StatEffect(MainManager.instance.playerdata[i].battleentity, 2));
                 battle.StartCoroutine(battle.StatEffect(MainManager.instance.playerdata[i].battleentity, 3));
             }
@@ -411,6 +444,11 @@ namespace BFPlus.Extensions.EnemyAI
             }
         }
 
+        void CheckIdleState(EntityControl entity, int actionid)
+        {
+            if (battle.enemydata[actionid].data[3] == 1)
+                entity.animstate = entity.basestate;
+        }
 
     }
 }

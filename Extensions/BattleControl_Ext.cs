@@ -84,7 +84,7 @@ namespace BFPlus.Extensions
         public bool inAiAttack = false;
         const int BASE_CORYCEPSLEECH_DMG = 8;
         public int gourmetItemUse = -1;
-        List<(DelayedProjectileData data, DelProjType type)> delProjsPlayer = new List<(DelayedProjectileData, DelProjType)>();
+        List<DelayedProjExtra> delProjsPlayer = new List<DelayedProjExtra>();
         List<(int data, DelayedProjExtra extra)> delProjsExtras = new List<(int, DelayedProjExtra)>();
         public bool targetIsPlayer;
         static BattleControl_Ext instance = null;
@@ -931,7 +931,7 @@ namespace BFPlus.Extensions
                     firePopper.overrideanim = true;
                     firePopper.animstate = 110;
                     MainManager.PlaySound("Boing1", 1f, 1);
-                    battle.ReviveEnemy(i, 0.75f, false, true);
+                    battle.ReviveEnemy(i, 0.5f, false, true);
                     revived = true;
                     yield return EventControl.halfsec;
                     break;
@@ -2329,7 +2329,7 @@ namespace BFPlus.Extensions
 
                 if (MainManager.BadgeIsEquipped((int)Medal.SkippingStone))
                 {
-                    Instance.CreateRipple(pebble);
+                    MainManager.PlayParticle(NewParticle.Ripples.ToString(), new Vector3(pebble.transform.position.x, pebble.transform.position.y + 0.5f, pebble.transform.position.z));
                     for (int i = enemyID + 1; i < battle.enemydata.Length; i++)
                     {
                         targetEntity = battle.enemydata[i];
@@ -2361,7 +2361,7 @@ namespace BFPlus.Extensions
                         entity.Emoticon(MainManager.Emoticons.None);
                         if (targetEntity.position == BattleControl.BattlePosition.Underground)
                             break;
-                        Instance.CreateRipple(pebble);
+                        MainManager.PlayParticle(NewParticle.Ripples.ToString(), new Vector3(pebble.transform.position.x, pebble.transform.position.y + 0.5f, pebble.transform.position.z));
                         battle.DoDamage(ref battle.enemydata[i], damage, new BattleControl.AttackProperty?(BattleControl.AttackProperty.NoExceptions));
                         Instance.CheckGrumbleGravel(i, battle);
                         Instance.CheckAvalanche(battle, i, icecles);
@@ -2402,12 +2402,6 @@ namespace BFPlus.Extensions
                 icecles.Add(Instantiate(Resources.Load("Prefabs/Objects/icecle"), new Vector3(endPosition.x, 15f, endPosition.z), Quaternion.identity) as GameObject);
                 battleControl.StartCoroutine(Instance.DoAvalanche(icecles[icecles.Count - 1], icecles[icecles.Count - 1].transform.position, endPosition, battleControl, enemyId, avalancheDMG));
             }
-        }
-
-        void CreateRipple(SpriteRenderer pebble)
-        {
-            var ripplePos = new Vector3(pebble.transform.position.x, pebble.transform.position.y + 0.5f, pebble.transform.position.z);
-            Instantiate(MainManager_Ext.assetBundle.LoadAsset("Ripples"), ripplePos, Quaternion.identity);
         }
 
         void CheckGrumbleGravel(int enemyID, BattleControl instance)
@@ -3143,10 +3137,10 @@ namespace BFPlus.Extensions
             int inkTrapDamage = 5;
             if (!usedByEnemy)
             {
-                AddDelProjsPlayer(inkTrap, DelProjType.InkTrap, battle.target, inkTrapDamage, 1, 0, AttackProperty.Ink, 35f, summonedBy, "WaterSplash2", "InkGet", "Digging@Down");
-                var (data, type) = delProjsPlayer[delProjsPlayer.Count - 1];
-                data.args = "move,0,-0.5,0@noshadow@partoff,0,0.5,0@partoff,0,1,0";
-                delProjsPlayer[delProjsPlayer.Count - 1] = (data, type);
+                MainManager.BattleData targetData = MainManager.battle.avaliabletargets[battle.target];
+                int target = targetData.battleentity.battleid;
+                AddDelProjsPlayer(inkTrap, DelProjType.InkTrap, target, inkTrapDamage, 1, 0, AttackProperty.Ink, 35f, summonedBy, "WaterSplash2", "InkGet", "Digging@Down");
+                delProjsPlayer[delProjsPlayer.Count - 1].delProjData.args = "move,0,-0.5,0@noshadow@partoff,0,0.5,0@partoff,0,1,0";
             }
             else
             {
@@ -3182,13 +3176,15 @@ namespace BFPlus.Extensions
 
             Vector3 startPos = stickyBomb.transform.position;
             Vector3 targetpos;
+            int target =0;
             if (usedByEnemy)
             {
                 targetpos = battle.partymiddle;
             }
             else
             {
-                int target = battle.target;
+                MainManager.BattleData targetData = MainManager.battle.avaliabletargets[battle.target];
+                target = targetData.battleentity.battleid;
                 var targetEntity = battle.enemydata[target].battleentity;
                 targetpos = targetEntity.transform.position + battle.enemydata[target].cursoroffset + new Vector3(0f, targetEntity.height - 1f);
             }
@@ -3215,10 +3211,8 @@ namespace BFPlus.Extensions
             int areaDamage = 4;
             if (!usedByEnemy)
             {
-                AddDelProjsPlayer(stickyBomb.gameObject, DelProjType.StickyBomb, battle.target, stickyBombDamage, 1, areaDamage, AttackProperty.Sticky, 35f, summonedBy, "AhoneynationSpit", "explosion", "Explosion");
-                var (data, type) = delProjsPlayer[delProjsPlayer.Count - 1];
-                data.args = "move,0,-0.5,0@noshadow@partoff,0,0.5,0@partoff,0,1,0";
-                delProjsPlayer[delProjsPlayer.Count - 1] = (data, type);
+                AddDelProjsPlayer(stickyBomb.gameObject, DelProjType.StickyBomb, target, stickyBombDamage, 1, areaDamage, AttackProperty.Sticky, 35f, summonedBy, "AhoneynationSpit", "explosion", "Explosion");
+                delProjsPlayer[delProjsPlayer.Count - 1].delProjData.args = "move,0,-0.5,0@noshadow@partoff,0,0.5,0@partoff,0,1,0";
             }
             else
             {
@@ -4967,7 +4961,7 @@ namespace BFPlus.Extensions
             if (BattleControl_Ext.actionID >= 0 && __instance.enemy && BattleControl_Ext.actionID < __instance.enemydata.Length)
             {
                 var entityExt = Entity_Ext.GetEntity_Ext(__instance.enemydata[BattleControl_Ext.actionID].battleentity);
-                if (entityExt.tauntedBy != -1)
+                if (entityExt.tauntedBy != -1 && entityExt.tauntedBy < MainManager.instance.playerdata.Length && MainManager.instance.playerdata[entityExt.tauntedBy].hp > 0)
                 {
                     __result = entityExt.tauntedBy;
                     return false;
@@ -5014,11 +5008,21 @@ namespace BFPlus.Extensions
             battle.UpdateText();
         }
 
-        public IEnumerator WaitForActionGourmet()
+        public IEnumerator WaitForActionGourmet(int playerId)
         {
             yield return new WaitUntil(() => !MainManager.battle.action);
-            BattleControl_Ext.Instance.gourmetItemUse--;
-            BattleControl_Ext.Instance.GoToItemList();
+            bool isStopped = battle.IsStoppedLite(MainManager.instance.playerdata[playerId]);
+            int aliveEnemies = battle.AliveEnemies();
+
+            if (MainManager.instance.playerdata[playerId].hp > 0 && aliveEnemies > 0 && !isStopped)
+            {
+                BattleControl_Ext.Instance.gourmetItemUse--;
+                BattleControl_Ext.Instance.GoToItemList();
+            }
+            else
+            {
+                BattleControl_Ext.Instance.gourmetItemUse = -1;
+            }
         }
 
         public void AddDelProjsPlayer(GameObject obj, DelProjType type, int targetpos, int damage, int turnstohit, int areadamage, BattleControl.AttackProperty? property, float framespeed, MainManager.BattleData summonedby, string hitsound, string hitparticle, string whilesound)
@@ -5036,7 +5040,13 @@ namespace BFPlus.Extensions
             delayedProjectileData.areadamage = areadamage;
             delayedProjectileData.property = property;
             delayedProjectileData.obj.transform.parent = battle.battlemap.transform;
-            delProjsPlayer.Add((delayedProjectileData, type));
+
+            DelayedProjExtra extra = new DelayedProjExtra();
+            extra.delProjData = delayedProjectileData;
+            extra.type = type;
+            if (targetpos > 0 && targetpos < battle.enemydata.Length)
+                extra.targetEntity = battle.enemydata[targetpos].battleentity;
+            delProjsPlayer.Add(extra);
         }
 
         IEnumerator DoDelProjPlayer()
@@ -5046,40 +5056,47 @@ namespace BFPlus.Extensions
                 bool any = false;
                 battle.nonphyscal = true;
 
-                List<(DelayedProjectileData data, DelProjType type)> projToRemove = new List<(DelayedProjectileData data, DelProjType type)>();
+                List<DelayedProjExtra> projToRemove = new List<DelayedProjExtra>();
                 for (int i = 0; i < delProjsPlayer.Count; i++)
                 {
-                    var (data, type) = delProjsPlayer[i];
+                    var data = delProjsPlayer[i].delProjData;
                     data.turns -= 1;
-                    delProjsPlayer[i] = (data, type);
+                    delProjsPlayer[i].delProjData = data;
 
-                    if (delProjsPlayer[i].data.turns <= 0)
+                    if (delProjsPlayer[i].delProjData.turns <= 0)
                     {
 
                         projToRemove.Add(delProjsPlayer[i]);
-                        int target = delProjsPlayer[i].data.position;
+                        int target = delProjsPlayer[i].delProjData.position;
                         any = true;
 
-                        if (delProjsPlayer[i].data.whilesound != null)
+                        if (delProjsPlayer[i].delProjData.whilesound != null)
                         {
-                            if (delProjsPlayer[i].data.whilesound[0] == '@')
+                            if (delProjsPlayer[i].delProjData.whilesound[0] == '@')
                             {
-                                MainManager.PlaySound(delProjsPlayer[i].data.whilesound.Replace("@", ""), -1, 1f, 1f);
+                                MainManager.PlaySound(delProjsPlayer[i].delProjData.whilesound.Replace("@", ""), -1, 1f, 1f);
                             }
                             else
                             {
-                                MainManager.PlaySound(delProjsPlayer[i].data.whilesound, -1, 1f, 1f, true);
+                                MainManager.PlaySound(delProjsPlayer[i].delProjData.whilesound, -1, 1f, 1f, true);
                             }
                         }
 
                         if (target >= battle.enemydata.Length)
                         {
                             target = -1;
-                            for (int j = 0; j < battle.enemydata.Length; j++)
+                            if (delProjsPlayer[i].targetEntity != null)
                             {
-                                if (battle.enemydata[j].hp > 0 && (battle.enemydata[j].position == BattlePosition.Ground || battle.enemydata[j].position == BattlePosition.Underground))
+                                target = delProjsPlayer[i].targetEntity.battleid;
+                            }
+                            else
+                            {
+                                for (int j = 0; j < battle.enemydata.Length; j++)
                                 {
-                                    target = j;
+                                    if (battle.enemydata[j].hp > 0 && (battle.enemydata[j].position == BattlePosition.Ground || battle.enemydata[j].position == BattlePosition.Underground))
+                                    {
+                                        target = j;
+                                    }
                                 }
                             }
                         }
@@ -5087,9 +5104,9 @@ namespace BFPlus.Extensions
                         bool noShadow = false;
                         Vector3 offset = Vector3.up;
                         Vector3 partoffset = Vector3.zero;
-                        if (delProjsPlayer[i].data.args != null)
+                        if (delProjsPlayer[i].delProjData.args != null)
                         {
-                            string[] array2 = delProjsPlayer[i].data.args.Split(new char[] { '@' });
+                            string[] array2 = delProjsPlayer[i].delProjData.args.Split(new char[] { '@' });
                             for (int j = 0; j < array2.Length; j++)
                             {
                                 string[] array3 = array2[j].Split(new char[] { ',' });
@@ -5126,34 +5143,34 @@ namespace BFPlus.Extensions
                         }
                         if (!noShadow)
                         {
-                            delProjsPlayer[i].data.obj.AddComponent<ShadowLite>();
+                            delProjsPlayer[i].delProjData.obj.AddComponent<ShadowLite>();
                         }
 
                         float a = 0f;
-                        Vector3 startPos = delProjsPlayer[i].data.obj.transform.position;
+                        Vector3 startPos = delProjsPlayer[i].delProjData.obj.transform.position;
 
                         if (target != -1 && delProjsPlayer[i].type != DelProjType.StickyBomb)
                         {
                             do
                             {
-                                delProjsPlayer[i].data.obj.transform.position = Vector3.Lerp(startPos, battle.enemydata[target].battleentity.transform.position + offset, a / delProjsPlayer[i].data.framestep);
+                                delProjsPlayer[i].delProjData.obj.transform.position = Vector3.Lerp(startPos, battle.enemydata[target].battleentity.transform.position + offset, a / delProjsPlayer[i].delProjData.framestep);
                                 a += MainManager.framestep;
                                 yield return null;
                             }
-                            while (a < delProjsPlayer[i].data.framestep);
+                            while (a < delProjsPlayer[i].delProjData.framestep);
                         }
 
-                        if (delProjsPlayer[i].data.whilesound != null)
+                        if (delProjsPlayer[i].delProjData.whilesound != null)
                         {
-                            MainManager.StopSound(delProjsPlayer[i].data.whilesound);
+                            MainManager.StopSound(delProjsPlayer[i].delProjData.whilesound);
                         }
-                        if (delProjsPlayer[i].data.deathsound != null)
+                        if (delProjsPlayer[i].delProjData.deathsound != null)
                         {
-                            MainManager.PlaySound(delProjsPlayer[i].data.deathsound);
+                            MainManager.PlaySound(delProjsPlayer[i].delProjData.deathsound);
                         }
-                        if (delProjsPlayer[i].data.deathparticle != null)
+                        if (delProjsPlayer[i].delProjData.deathparticle != null)
                         {
-                            MainManager.PlayParticle(delProjsPlayer[i].data.deathparticle, delProjsPlayer[i].data.obj.transform.position + partoffset);
+                            MainManager.PlayParticle(delProjsPlayer[i].delProjData.deathparticle, delProjsPlayer[i].delProjData.obj.transform.position + partoffset);
                         }
 
                         if (target != -1)
@@ -5162,7 +5179,7 @@ namespace BFPlus.Extensions
                             {
                                 if (battle.enemydata[target].hp > 0 && (battle.enemydata[target].position == BattlePosition.Ground || battle.enemydata[target].position == BattlePosition.Underground))
                                 {
-                                    battle.DoDamage(null, ref battle.enemydata[target], delProjsPlayer[i].data.damage, delProjsPlayer[i].data.property, null, false);
+                                    battle.DoDamage(null, ref battle.enemydata[target], delProjsPlayer[i].delProjData.damage, delProjsPlayer[i].delProjData.property, null, false);
                                 }
                             }
                         }
@@ -5171,16 +5188,16 @@ namespace BFPlus.Extensions
                         {
                             MainManager.ShakeScreen(Vector3.one * 0.1f, 0.15f);
 
-                            if (delProjsPlayer[i].data.areadamage > 0)
+                            if (delProjsPlayer[i].delProjData.areadamage > 0)
                             {
                                 for (int j = 0; j < battle.enemydata.Length; j++)
                                 {
                                     EntityControl targetEntity = battle.enemydata[j].battleentity;
-                                    bool isClose = MainManager.GetSqrDistance(targetEntity.transform.position + targetEntity.freezeoffset + Vector3.up * targetEntity.height, delProjsPlayer[i].data.obj.transform.position) <= 15.5f;
+                                    bool isClose = MainManager.GetSqrDistance(targetEntity.transform.position + targetEntity.freezeoffset + Vector3.up * targetEntity.height, delProjsPlayer[i].delProjData.obj.transform.position) <= 15.5f;
 
                                     if (isClose && battle.enemydata[j].hp > 0 && battle.enemydata[j].position != BattlePosition.Underground)
                                     {
-                                        int damage = j == target ? delProjsPlayer[i].data.damage : delProjsPlayer[i].data.areadamage;
+                                        int damage = j == target ? delProjsPlayer[i].delProjData.damage : delProjsPlayer[i].delProjData.areadamage;
                                         battle.DoDamage(null, ref battle.enemydata[j], damage, null, null, false);
                                         MainManager.SetCondition(BattleCondition.Sticky, ref battle.enemydata[j], 4);
                                         MainManager.PlayParticle("StickyGet", battle.enemydata[j].battleentity.transform.position + Vector3.up);
@@ -5190,7 +5207,7 @@ namespace BFPlus.Extensions
                             }
                         }
 
-                        Destroy(delProjsPlayer[i].data.obj);
+                        Destroy(delProjsPlayer[i].delProjData.obj);
                         yield return new WaitForSeconds(0.6f);
                     }
                 }
@@ -5508,7 +5525,6 @@ namespace BFPlus.Extensions
             if (hitCount > baseHitCount && index >= baseHitCount)
                 index = baseHitCount - 1;
 
-            Console.WriteLine($"GEt multi called with damage : {baseDamage}, index {index}, hitCount {hitCount}");
             float damageMultiplier = 2f;
 
             int totalDamage = (int)Math.Ceiling(baseDamage * damageMultiplier);

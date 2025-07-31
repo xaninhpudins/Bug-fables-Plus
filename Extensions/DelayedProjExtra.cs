@@ -9,8 +9,10 @@ namespace BFPlus.Extensions
     public class DelayedProjExtra : MonoBehaviour
     {
         public Action<int, int[], int> extraAction;
-
         public int[] data;
+        public BattleControl.DelayedProjectileData delProjData;
+        public DelProjType type;
+        public EntityControl targetEntity = null;
 
         public void DoExtraEffect(int damageDone, int projId)
         {

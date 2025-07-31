@@ -77,7 +77,6 @@ namespace BFPlus.Extensions.EnemyAI
                     battle.enemydata[actionid].data[0]--;
                 }
                 Attacks attack = MainManager_Ext.GetWeightedResult(attacks);
-
                 switch (attack)
                 {
                     case Attacks.Bite:
@@ -203,9 +202,9 @@ namespace BFPlus.Extensions.EnemyAI
 
         IEnumerator DoUndergroundStrike(EntityControl entity, int actionid)
         {
-            Vector3 baseModelPos = entity.model.localPosition;
             Vector3 baseEntityPos = entity.transform.position;
 
+            entity.LockRigid(true);
             entity.animstate = 103;
             yield return EventControl.tenthsec;
 
@@ -216,15 +215,15 @@ namespace BFPlus.Extensions.EnemyAI
                 yield return null;
             }
 
-            entity.model.localPosition = entity.model.localPosition + Vector3.down * 4.95f;
             battle.GetSingleTarget();
             var playertargetentityRef = battle.playertargetentity;
 
             Vector3 targetPos = playertargetentityRef.transform.position;
-            yield return LerpPosition(100f, entity.transform.position, targetPos + new Vector3(0f, 0f, -0.25f), entity.transform);
+            yield return LerpPosition(100f, entity.transform.position, targetPos + new Vector3(0f, 0, -0.25f), entity.transform);
 
             MainManager.StopSound(9);
             yield return EventControl.quartersec;
+            entity.transform.position += Vector3.down * 5;
 
             entity.animstate = 105;
             entity.digging = false;
@@ -247,11 +246,10 @@ namespace BFPlus.Extensions.EnemyAI
             {
                 yield return null;
             }
-
+            entity.transform.position = new Vector3(targetPos.x, 0, targetPos.z);
             //goes back to base pos
             yield return LerpPosition(20f, entity.transform.position, baseEntityPos, entity.transform);
-            entity.transform.position = baseEntityPos;
-            entity.model.localPosition = baseModelPos;
+            entity.LockRigid(false);
 
             MainManager.StopSound(9);
             entity.digging = false;

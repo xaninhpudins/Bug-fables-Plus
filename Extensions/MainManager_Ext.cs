@@ -31,7 +31,8 @@ namespace BFPlus.Extensions
         SpadeExplosion,
         SuitSphere,
         SuitHit,
-        HoaxeDiamond
+        HoaxeDiamond,
+        Ripples
     }
 
     public enum NewCode

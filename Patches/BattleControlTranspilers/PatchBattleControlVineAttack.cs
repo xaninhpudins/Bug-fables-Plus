@@ -32,8 +32,6 @@ namespace BFPlus.Patches.BattleControlTranspilers
             cursor.Emit(OpCodes.Ldfld, callerIdRef);
             cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(PatchMarsVineHits), "CheckVineHits"));
             cursor.RemoveRange(2);
-
-            indexInserted = cursor.Index;
         }
 
         static bool CheckVineHits(int callerId)
