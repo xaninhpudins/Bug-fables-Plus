@@ -82,7 +82,7 @@ namespace BFPlus.Extensions
         SpriteRenderer rewardIcon = null;
 
         public bool inAiAttack = false;
-        const int BASE_CORYCEPSLEECH_DMG = 8;
+        const int BASE_CORYCEPSLEECH_DMG = 6;
         public int gourmetItemUse = -1;
         List<DelayedProjExtra> delProjsPlayer = new List<DelayedProjExtra>();
         List<(int data, DelayedProjExtra extra)> delProjsExtras = new List<(int, DelayedProjExtra)>();
@@ -1366,12 +1366,14 @@ namespace BFPlus.Extensions
                     wait = true;
                     break;
 
+                case MainManager.ItemUsage.TPRecoverFull:
                 case MainManager.ItemUsage.TPRecover:
                     MainManager.PlaySound("Heal2");
                     battle.ShowDamageCounter(2,
                             value,
                             battle.enemydata[enemyID.Value].battleentity.transform.position + battle.enemydata[enemyID.Value].cursoroffset,
                             Vector3.up);
+                    GetEnemyTpCharge(value, enemyID.Value);
                     wait = true;
                     break;
 
@@ -1566,7 +1568,7 @@ namespace BFPlus.Extensions
                     break;
 
                 case MainManager.ItemUsage.GradualTP:
-                    MainManager.PlaySound("Heal3");
+                    AddEnemyBuff(enemyID.Value, MainManager.BattleCondition.GradualTP, value, "Heal3", -1);
                     MainManager.PlayParticle("MagicUp", null, battle.enemydata[enemyID.Value].battleentity.transform.position);
                     wait = true;
                     break;
@@ -2935,7 +2937,9 @@ namespace BFPlus.Extensions
             entity.StartCoroutine(entity.ShakeSprite(0.1f, 240f));
             yield return new WaitUntil(() => !MainManager.battle.doingaction);
 
-            int damage = Mathf.Clamp(Mathf.CeilToInt(BASE_CORYCEPSLEECH_DMG * battle.barfill), 4, BASE_CORYCEPSLEECH_DMG);
+            int playerAtk = MainManager.instance.playerdata[MainManager.battle.currentturn].atk;
+            int baseDamage = playerAtk + BASE_CORYCEPSLEECH_DMG;
+            int damage = Mathf.Clamp(Mathf.CeilToInt((baseDamage) * battle.barfill), 4, baseDamage);
             yield return EventControl.sec;
 
             data = new float[] { (float)UnityEngine.Random.Range(4, 7) };
@@ -5534,6 +5538,35 @@ namespace BFPlus.Extensions
             int remainder = remainingDamage % (baseHitCount - 1);
             int hitDamage = baseHit + ((index - 2) < remainder ? 1 : 0);
             return Mathf.Clamp(hitDamage, 1, 99);
+        }
+
+        public void GetEnemyTpCharge(int tp, int targetId)
+        {
+            int charges = tp / 2;
+            int maxPerEnemy = 3;
+            int index = targetId;
+
+            int[] chargeAmounts = new int[battle.enemydata.Length];
+            while (charges > 0)
+            {
+                if (battle.enemydata[index].charge + chargeAmounts[index] < maxPerEnemy)
+                {
+                    chargeAmounts[index]++;
+                    charges--;
+                }
+
+                index = (index + 1) % battle.enemydata.Length;
+            }
+
+            MainManager.PlaySound("StatUp");
+            for (int i = 0; i < chargeAmounts.Length; i++) 
+            {
+                if (chargeAmounts[i] > 0 && battle.enemydata[i].charge < 3)
+                {
+                    battle.enemydata[i].charge = Mathf.Clamp(battle.enemydata[i].charge + chargeAmounts[i], 0, 3);
+                    battle.StartCoroutine(battle.StatEffect(battle.enemydata[i].battleentity, 4));
+                }
+            }
         }
     }
 }

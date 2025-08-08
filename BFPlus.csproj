@@ -566,6 +566,7 @@
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchCatalystInk.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchCheckCryostatis.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchEatenCondition.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchGradualTPEnemy.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchHeatingUp.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchHeavySleeper.cs" />
     <Compile Include="Patches\BattleControlTranspilers\AdvanceTurnEntityPatches\PatchPoisonDMG.cs" />
@@ -585,6 +586,7 @@
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\EnemyPatches\ZommothPatches.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\PatchFixSetLastTurns.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\PatchFrigidCoffinFreeze.cs" />
+    <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\SkillPatches\KabbuSkills.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\SkillPatches\LeifSkills.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\SkillPatches\ViSkills.cs" />
     <Compile Include="Patches\BattleControlTranspilers\DoActionPatches\YieldUseCharmHP.cs" />
