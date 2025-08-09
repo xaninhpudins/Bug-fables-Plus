@@ -5547,7 +5547,7 @@ namespace BFPlus.Extensions
             int index = targetId;
 
             int[] chargeAmounts = new int[battle.enemydata.Length];
-            while (charges > 0)
+            while (charges > 0 && battle.enemydata.Any(e => e.charge + chargeAmounts[index] < maxPerEnemy))
             {
                 if (battle.enemydata[index].charge + chargeAmounts[index] < maxPerEnemy)
                 {
@@ -5561,7 +5561,7 @@ namespace BFPlus.Extensions
             MainManager.PlaySound("StatUp");
             for (int i = 0; i < chargeAmounts.Length; i++) 
             {
-                if (chargeAmounts[i] > 0 && battle.enemydata[i].charge < 3)
+                if (chargeAmounts[i] > 0 && battle.enemydata[i].charge < maxPerEnemy)
                 {
                     battle.enemydata[i].charge = Mathf.Clamp(battle.enemydata[i].charge + chargeAmounts[i], 0, 3);
                     battle.StartCoroutine(battle.StatEffect(battle.enemydata[i].battleentity, 4));
