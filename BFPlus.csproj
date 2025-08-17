@@ -607,7 +607,6 @@
     <Compile Include="Patches\BattleControlTranspilers\PatchClearStatus.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchCounterAnimation.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchDoDamage.cs" />
-    <Compile Include="Patches\BattleControlTranspilers\PatchIceRain.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchReturnToOverworld.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchSetMaxOptions.cs" />
     <Compile Include="Patches\BattleControlTranspilers\PatchShowDamageCounter.cs" />

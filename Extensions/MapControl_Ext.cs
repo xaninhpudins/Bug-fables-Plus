@@ -947,6 +947,10 @@ namespace BFPlus.Extensions
             rock.gameObject.AddComponent<MeshCollider>();
 
             baseObject.transform.Find("Big Plain Rock (2)").gameObject.AddComponent<MeshCollider>();
+
+            var boxCol = baseObject.transform.Find("AncientPillarBigBroken2").gameObject.GetComponent<BoxCollider>();
+            boxCol.size = new Vector3(14,boxCol.size.y, boxCol.size.z);
+            boxCol.center = new Vector3(-6, boxCol.center.y, boxCol.center.z);
         }
 
         public static void ChangeAntPalace1(MapControl __instance)

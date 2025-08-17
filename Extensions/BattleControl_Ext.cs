@@ -92,7 +92,6 @@ namespace BFPlus.Extensions
         public DelayedProjExtra currentDelayedProj = null;
         public int mothFlowerHits = 0;
         public bool inStylishTutorial = false;
-        public int iceRainHits = 0;
         const int vengeanceMax = 3;
         public static BattleControl_Ext Instance
         {

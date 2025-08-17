@@ -32,7 +32,7 @@ namespace BFPlus.Patches.BattleControlTranspilers.DoActionPatches.SkillPatches
 
 
     /// <summary>
-    /// We reset the icerain hits count and we make ice rain cost 2 turns
+    /// We make ice rain cost 2 turns
     /// </summary>
     public class PatchLeifResetIceRainHits : PatchBaseDoAction
     {
@@ -46,14 +46,13 @@ namespace BFPlus.Patches.BattleControlTranspilers.DoActionPatches.SkillPatches
             cursor.GotoNext(MoveType.After,i => i.MatchLdcI4(102), i=>i.MatchStfld(out _));
             cursor.GotoNext(i => i.MatchLdcI4(65));
             cursor.GotoNext(i => i.MatchLdnull(), i => i.MatchStfld(out _));
-            cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(PatchLeifResetIceRainHits), "ResetIceRainHits"));
+            cursor.Emit(OpCodes.Call, AccessTools.Method(typeof(PatchLeifResetIceRainHits), "IncreaseIceRainCantMove"));
         
         }
 
-        static void ResetIceRainHits()
+        static void IncreaseIceRainCantMove()
         {
             MainManager.instance.playerdata[MainManager.battle.currentturn].cantmove++;
-            BattleControl_Ext.Instance.iceRainHits = 0;
         }
     }
 }

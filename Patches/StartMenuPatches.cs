@@ -216,15 +216,11 @@ namespace BFPlus.Patches
             List<EntityControl> entities = new List<EntityControl>();
             foreach (var e in areaData.entities)
             {
-                bool canExist;
+                bool canExist = e.progress == -1 || progress >= e.progress;
 
                 if (e.beforeProgress)
                 {
                     canExist = progress < e.progress;
-                }
-                else
-                {
-                    canExist = e.progress == -1 || progress >= e.progress;
                 }
 
                 if (canExist)
