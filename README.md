@@ -1,3 +1,13 @@
+## Why did I fork
+Lyght did a massive indirect nerf on A.D.B.P. enhancer while nerfing tornado/hurricane toss, they used to scale with 4x attack after nerf 2x attack, but due to the way the new damage calculation works, A.D.B.P. enhancer makes them scale with 2.(3)x attack rounded down and I want to make it 3x attack like how needle toss/pincer work.
+
+## How will I manage the fork
+The upstream-main branch mirrors the upstream repository and is used only to pull updates from the original project.
+
+Each change or feature will be developed in its own branch.
+
+The main branch contains the code used to build releases and will merge the completed feature branches.
+
 ## BugFables Plus
 Bug Fables Plus is finally here! This is a full game mod adding new content to pretty much all areas of the game. New Medals, Enemies, Items, Bosses, Dungeons and much more! 
 
