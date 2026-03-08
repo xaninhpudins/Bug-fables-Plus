@@ -5522,22 +5522,104 @@ namespace BFPlus.Extensions
 
         static int GetMultiHitDamage(int baseDamage, int index)
         {
-            const int baseHitCount = 4;
-            int hitCount = MainManager.BadgeIsEquipped((int)MainManager.BadgeTypes.Beemerang2) ? 5 : 4;
+            if(baseDamage == 0)
+                return 0;
 
-            if (hitCount > baseHitCount && index >= baseHitCount)
-                index = baseHitCount - 1;
+            int ViAttack = baseDamage+1;
 
-            float damageMultiplier = 2f;
+            // ignoring the 1st hit
+            double totalDamage = ViAttack*1.0 + 0; // buff or nerf here
+            int totalHits = 3;
 
-            int totalDamage = (int)Math.Ceiling(baseDamage * damageMultiplier);
-            int remainingDamage = totalDamage - baseDamage;
+            if(MainManager.BadgeIsEquipped((int)MainManager.BadgeTypes.Beemerang2)){
 
-            int baseHit = remainingDamage / (baseHitCount - 1);
-            int remainder = remainingDamage % (baseHitCount - 1);
-            int hitDamage = baseHit + ((index - 2) < remainder ? 1 : 0);
+                totalDamage += ViAttack*1.0 -3;   // buff or nerf here
+                // totalDamage = ViAttack*3.0 -4; // or here
+
+                totalHits++;
+            }
+
+            int hitDamage = (int) totalDamage / totalHits;
+
+            int leftoverDamage = (int) totalDamage % totalHits;
+
+            if(leftoverDamage >= index)
+                hitDamage++;
+
             return Mathf.Clamp(hitDamage, 1, 99);
         }
+
+/**
+
+complies with Lyght's numbers without A.D.B.P. enhancer equipped
+
+attack = 02  ->   1 1 1 1  |  total: 4
+attack = 03  ->   2 1 1 1  |  total: 5
+attack = 04  ->   3 2 1 1  |  total: 7
+attack = 05  ->   4 2 2 1  |  total: 9
+attack = 06  ->   5 2 2 2  |  total: 11
+attack = 07  ->   6 3 2 2  |  total: 13
+attack = 08  ->   7 3 3 2  |  total: 15
+attack = 09  ->   8 3 3 3  |  total: 17
+attack = 10  ->   9 4 3 3  |  total: 19
+attack = 11  ->  10 4 4 3  |  total: 21
+attack = 12  ->  11 4 4 4  |  total: 23
+attack = 13  ->  12 5 4 4  |  total: 25
+attack = 14  ->  13 5 5 4  |  total: 27
+attack = 15  ->  14 5 5 5  |  total: 29
+attack = 16  ->  15 6 5 5  |  total: 31
+attack = 17  ->  16 6 6 5  |  total: 33
+attack = 18  ->  17 6 6 6  |  total: 35
+attack = 19  ->  18 7 6 6  |  total: 37
+attack = 20  ->  19 7 7 6  |  total: 39
+
+
+previous values with A.D.B.P. enhancer equipped
+
+attack = 02  ->   1 1 1 1 1  |  total: 5
+attack = 03  ->   2 1 1 1 1  |  total: 6
+attack = 04  ->   3 2 1 1 1  |  total: 8
+attack = 05  ->   4 2 2 1 1  |  total: 10
+attack = 06  ->   5 2 2 2 2  |  total: 13
+attack = 07  ->   6 3 2 2 2  |  total: 15
+attack = 08  ->   7 3 3 2 2  |  total: 17
+attack = 09  ->   8 3 3 3 3  |  total: 20
+attack = 10  ->   9 4 3 3 3  |  total: 22
+attack = 11  ->  10 4 4 3 3  |  total: 24
+attack = 12  ->  11 4 4 4 4  |  total: 27
+attack = 13  ->  12 5 4 4 4  |  total: 29
+attack = 14  ->  13 5 5 4 4  |  total: 31
+attack = 15  ->  14 5 5 5 5  |  total: 34
+attack = 16  ->  15 6 5 5 5  |  total: 36
+attack = 17  ->  16 6 6 5 5  |  total: 38
+attack = 18  ->  17 6 6 6 6  |  total: 41
+attack = 19  ->  18 7 6 6 6  |  total: 43
+attack = 20  ->  19 7 7 6 6  |  total: 45
+
+
+current ones with A.D.B.P. enhancer equipped
+
+attack = 2   ->   1 1 1 1 1   |  total: 5
+attack = 3   ->   2 1 1 1 1   |  total: 6
+attack = 4   ->   3 2 1 1 1   |  total: 8
+attack = 5   ->   4 2 2 2 1   |  total: 11
+attack = 6   ->   5 3 2 2 2   |  total: 14
+attack = 7   ->   6 3 3 3 2   |  total: 17
+attack = 8   ->   7 4 3 3 3   |  total: 20
+attack = 9   ->   8 4 4 4 3   |  total: 23
+attack = 10  ->   9 5 4 4 4   |  total: 26
+attack = 11  ->  10 5 5 5 4   |  total: 29
+attack = 12  ->  11 6 5 5 5   |  total: 32
+attack = 13  ->  12 6 6 6 5   |  total: 35
+attack = 14  ->  13 7 6 6 6   |  total: 38
+attack = 15  ->  14 7 7 7 6   |  total: 41
+attack = 16  ->  15 8 7 7 7   |  total: 44
+attack = 17  ->  16 8 8 8 7   |  total: 47
+attack = 18  ->  17 9 8 8 8   |  total: 50
+attack = 19  ->  18 9 9 9 8   |  total: 53
+attack = 20  ->  19 10 9 9 9  |  total: 56
+
+*/
 
         public void GetEnemyTpCharge(int tp, int targetId)
         {
